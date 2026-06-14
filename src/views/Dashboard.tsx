@@ -191,7 +191,7 @@ export default function Dashboard() {
 
             <SidebarContent className="p-3 scrollbar-hide">
               <SidebarGroup>
-                <div className="mb-2 px-2 text-[10px] font-mono font-bold text-muted-foreground/50 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
+                <div className="mb-2 px-2 text-[10px] font-mono font-bold text-muted-foreground/80 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
                   COMMAND CENTER
                 </div>
                 <SidebarMenu className="gap-1.5">
@@ -204,7 +204,7 @@ export default function Dashboard() {
               </SidebarGroup>
 
               <SidebarGroup className="mt-4">
-                <div className="mb-2 px-2 text-[10px] font-mono font-bold text-muted-foreground/50 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
+                <div className="mb-2 px-2 text-[10px] font-mono font-bold text-muted-foreground/80 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
                   LEAGUE & OPERATIONS
                 </div>
                 <SidebarMenu className="gap-1.5">
@@ -256,7 +256,7 @@ export default function Dashboard() {
                   </span>
                 </div>
                 {!isMobile && (
-                  <div className="text-[10px] font-mono text-muted-foreground/80 flex items-center gap-1.5">
+                  <div className="text-[10px] font-mono text-foreground font-semibold flex items-center gap-1.5">
                     <Globe size={10} /> {seasonPhase.includes('PLAYOFFS') ? '결선 토너먼트 진행 중' : '정규 시즌 진행 중 (Regular Season)'} | {currentDate.toLocaleDateString()}
                   </div>
                 )}
@@ -312,13 +312,13 @@ export default function Dashboard() {
                     }, 300);
                   }
                 }}
-                className={`h-10 px-3 sm:px-8 font-black font-mono transition-all rounded-xl cursor-pointer hover:scale-105 active:scale-95 group relative overflow-hidden shrink-0 text-white
+                className={`h-10 px-3 sm:px-8 font-black font-mono transition-all rounded-xl cursor-pointer hover:scale-105 active:scale-95 group relative overflow-hidden shrink-0
                   ${isAdvancing ? 'opacity-80 scale-95 pointer-events-none' : ''}
                   ${activeMatch 
-                    ? 'bg-rose-600 hover:bg-rose-500 shadow-[0_0_20px_rgba(225,29,72,0.4)]' 
+                    ? 'bg-rose-500 hover:bg-rose-400 text-rose-950 shadow-[0_0_20px_rgba(244,63,94,0.3)]' 
                     : seasonPhase === 'STOVE_LEAGUE'
-                      ? 'bg-amber-600 hover:bg-amber-500 shadow-[0_0_20px_rgba(217,119,6,0.4)]'
-                      : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_20px_rgba(5,150,105,0.4)]'
+                      ? 'bg-amber-500 hover:bg-amber-400 text-amber-950 shadow-[0_0_20px_rgba(245,158,11,0.3)]'
+                      : 'bg-emerald-400 hover:bg-emerald-300 text-emerald-950 shadow-[0_0_20px_rgba(52,211,153,0.3)]'
                   }
                 `}
               >

@@ -56,14 +56,14 @@ export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ 
       </div>
 
       {/* Main Score Board */}
-      <div className={`bg-background/80 p-4 sm:p-6 rounded-2xl border border-border relative overflow-hidden flex ${isWidget ? 'flex-col gap-4' : 'flex-col lg:flex-row gap-4'} justify-between items-center shadow-inner shadow-black/50`}>
+      <div className={`bg-background/80 p-4 sm:p-5 rounded-2xl border border-border relative overflow-hidden flex ${isMobile ? 'flex-col gap-4' : 'flex-row gap-4'} justify-between items-center shadow-inner shadow-black/50 shrink-0`}>
         {/* Ambient Winner background glow */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(var(--primary),0.05)_0%,transparent_80%)] pointer-events-none" />
 
         {/* Home Team */}
-        <div className={`flex items-center gap-4 flex-1 ${isWidget ? 'justify-between w-full' : 'justify-center lg:justify-end w-full lg:w-auto'} text-right lg:pr-4`}>
+        <div className={`flex items-center gap-4 flex-1 ${isMobile ? 'justify-between w-full' : 'justify-end w-auto'} text-right pr-2`}>
           <div className="space-y-1">
-            <h3 className={`font-black text-foreground text-base flex flex-wrap items-center gap-1.5 ${isWidget ? 'justify-start text-left' : 'justify-end'}`}>
+            <h3 className={`font-black text-foreground text-base flex flex-wrap items-center gap-1.5 ${isMobile ? 'justify-start text-left' : 'justify-end'}`}>
               {homeTeam?.name}
               {homeWon && (
                 <span className="bg-primary/20 text-primary text-[10px] border border-primary/40 font-black px-2 py-0.5 rounded uppercase font-mono tracking-tight shadow-[0_0_10px_rgba(var(--primary),0.3)] shrink-0">
@@ -71,8 +71,8 @@ export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ 
                 </span>
               )}
             </h3>
-            <p className={`text-[10px] text-muted-foreground font-mono ${isWidget ? 'text-left' : ''}`}>구단 전투력: {homeTeam?.tier} Tier</p>
-            <p className={`text-[10px] text-muted-foreground/80 font-mono ${isWidget ? 'text-left' : ''}`}>시너지 격돌률: 100%</p>
+            <p className={`text-[10px] text-muted-foreground font-mono ${isMobile ? 'text-left' : 'text-right'}`}>구단 전투력: {homeTeam?.tier} Tier</p>
+            <p className={`text-[10px] text-muted-foreground/80 font-mono ${isMobile ? 'text-left' : 'text-right'}`}>시너지 격돌률: 100%</p>
           </div>
           <span className="text-4xl p-2 bg-background rounded-xl border border-border shadow-inner shadow-black/50 select-none shrink-0">
             {homeTeam?.logo}
@@ -80,11 +80,11 @@ export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ 
         </div>
 
         {/* Center Versum Scoreboard */}
-        <div className={`flex flex-col items-center px-4 md:px-8 text-center shrink-0 ${isWidget ? 'border-y border-border/50 py-4 w-full' : 'border-y lg:border-y-0 lg:border-x border-border/50 py-3 lg:py-0 w-full lg:w-auto'} z-10`}>
+        <div className={`flex flex-col items-center px-4 md:px-6 text-center shrink-0 ${isMobile ? 'border-y border-border/50 py-4 w-full' : 'border-x border-border/50 py-0 w-auto'} z-10`}>
           <span className="text-[9px] text-muted-foreground font-mono tracking-widest uppercase mb-1 flex items-center gap-1">
-            <Flame size={10} className="text-primary drop-shadow-[0_0_3px_rgba(var(--primary),0.5)]" /> FINAL MATCH SCORE
+            <Flame size={10} className="text-primary drop-shadow-[0_0_3px_rgba(var(--primary),0.5)]" /> FINAL SCORE
           </span>
-          <div className="flex items-center gap-4 text-3xl font-black font-mono">
+          <div className="flex items-center gap-3 text-3xl font-black font-mono">
             <span className={homeWon ? 'text-primary font-black scale-105 drop-shadow-[0_0_5px_rgba(var(--primary),0.8)]' : 'text-muted-foreground font-bold'}>{score.home}</span>
             <span className="text-muted-foreground/50 text-xl font-normal">:</span>
             <span className={awayWon ? 'text-primary font-black scale-105 drop-shadow-[0_0_5px_rgba(var(--primary),0.8)]' : 'text-muted-foreground font-bold'}>{score.away}</span>
@@ -97,9 +97,9 @@ export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ 
         </div>
 
         {/* Away Team */}
-        <div className={`flex items-center gap-4 flex-1 ${isWidget ? 'justify-between w-full flex-row-reverse' : 'justify-center lg:justify-start w-full lg:w-auto text-left lg:pl-4'}`}>
-          <div className="space-y-1 text-right lg:text-left">
-            <h3 className={`font-black text-foreground text-base flex flex-wrap items-center gap-1.5 ${isWidget ? 'justify-end' : 'justify-start'}`}>
+        <div className={`flex items-center gap-4 flex-1 ${isMobile ? 'justify-between w-full flex-row-reverse' : 'justify-start w-auto flex-row-reverse'} text-left pl-2`}>
+          <div className={`space-y-1 ${isMobile ? 'text-right' : 'text-left'}`}>
+            <h3 className={`font-black text-foreground text-base flex flex-wrap items-center gap-1.5 ${isMobile ? 'justify-end' : 'justify-start'}`}>
               {awayWon && (
                 <span className="bg-primary/20 text-primary text-[10px] border border-primary/40 font-black px-2 py-0.5 rounded uppercase font-mono tracking-tight shadow-[0_0_10px_rgba(var(--primary),0.3)] shrink-0">
                   WIN
@@ -107,8 +107,8 @@ export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ 
               )}
               {awayTeam?.name}
             </h3>
-            <p className="text-[10px] text-muted-foreground font-mono">구단 전투력: {awayTeam?.tier} Tier</p>
-            <p className="text-[10px] text-muted-foreground/80 font-mono">시너지 격돌률: 100%</p>
+            <p className={`text-[10px] text-muted-foreground font-mono ${isMobile ? 'text-right' : 'text-left'}`}>구단 전투력: {awayTeam?.tier} Tier</p>
+            <p className={`text-[10px] text-muted-foreground/80 font-mono ${isMobile ? 'text-right' : 'text-left'}`}>시너지 격돌률: 100%</p>
           </div>
           <span className="text-4xl p-2 bg-background rounded-xl border border-border shadow-inner shadow-black/50 select-none shrink-0">
             {awayTeam?.logo}
@@ -117,12 +117,12 @@ export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ 
       </div>
 
       {/* Aggregate Match Highlights mini bar */}
-      <div className="grid grid-cols-2 gap-4 bg-background/50 border border-border rounded-xl p-3 text-xs font-mono shadow-inner shadow-black/20">
+      <div className="grid grid-cols-2 gap-4 bg-background/50 border border-border rounded-xl p-3 text-xs font-mono shadow-inner shadow-black/20 shrink-0">
         <div className="flex flex-col gap-1 items-center justify-center border-r border-border/50">
           <span className="text-[9px] text-muted-foreground uppercase font-black drop-shadow-sm">TOTAL SCRIM KILLS</span>
           <div className="flex items-center gap-3 font-black text-sm">
             <span className="text-foreground">{homeKills}</span>
-            <span className="text-muted-foreground/60 text-xs font-normal">vs</span>
+            <span className="text-muted-foreground text-xs font-normal">vs</span>
             <span className="text-foreground">{awayKills}</span>
           </div>
         </div>
@@ -130,7 +130,7 @@ export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ 
           <span className="text-[9px] text-muted-foreground uppercase font-black font-mono drop-shadow-sm">TOTAL ACCUMULATED GOLD</span>
           <div className="flex items-center gap-3 font-black text-sm text-amber-400 drop-shadow-[0_0_2px_rgba(251,191,36,0.5)]">
             <span>{(homeGold / 1000).toFixed(1)}k</span>
-            <span className="text-muted-foreground/60 text-xs font-normal">vs</span>
+            <span className="text-muted-foreground text-xs font-normal">vs</span>
             <span>{(awayGold / 1000).toFixed(1)}k</span>
           </div>
         </div>

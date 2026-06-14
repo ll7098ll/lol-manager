@@ -107,7 +107,7 @@ export const OfficeHomeTab: React.FC<OfficeHomeTabProps> = ({
                           <span className="font-black text-lg tracking-tighter text-foreground">{myTeam.name}</span>
                         </div>
                         <div className="flex flex-col items-center gap-2 w-1/5">
-                          <span className="text-2xl font-black font-mono text-muted-foreground/40 italic">VS</span>
+                          <span className="text-2xl font-black font-mono text-muted-foreground/80 italic">VS</span>
                         </div>
                         <div className="flex flex-col items-center gap-3 w-2/5">
                           <span className="text-7xl drop-shadow-2xl">{opponent?.logo}</span>
