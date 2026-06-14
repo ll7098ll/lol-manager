@@ -1,4 +1,4 @@
-﻿import { Player, Champion, Team, Tactics, PlayerMatchStats } from '../types';
+import { Player, Champion, Team, Tactics, PlayerMatchStats } from '../types';
 import { CHAMPIONS } from '../data/initialData';
 
 export interface MatchSimResult {
@@ -19,6 +19,109 @@ export interface MatchSimResult {
 const findChamp = (id: string): Champion | undefined => {
   return CHAMPIONS.find(c => c.id === id);
 };
+
+// ============================================================
+// NEW: Champion Mastery Bonus System
+// ============================================================
+const getChampionMasteryBonus = (player: Player, championId: string): number => {
+  const mastery = player.championPool[championId];
+  if (mastery === undefined) return -8; // Champion NOT in pool: severe penalty
+  if (mastery >= 10) return 6;
+  if (mastery >= 7) return 3;
+  if (mastery >= 4) return 0;
+  return -4; // Very low mastery
+};
+
+// ============================================================
+// NEW: Champion Meta Tier Bonus
+// ============================================================
+const getChampionTierBonus = (championId: string): number => {
+  const champ = findChamp(championId);
+  if (!champ) return -6;
+  switch (champ.tier) {
+    case 1: return 3;
+    case 2: return 0;
+    case 3: return -3;
+    default: return -6; // tier 4+
+  }
+};
+
+// ============================================================
+// NEW: Team Tier Bonus (infrastructure, coaching quality)
+// ============================================================
+const getTeamTierBonus = (team: Team): { aiDiffBonus: number; infraSynergy: number } => {
+  switch (team.tier) {
+    case 'S': return { aiDiffBonus: 8, infraSynergy: 4 };
+    case 'A': return { aiDiffBonus: 5, infraSynergy: 2 };
+    case 'B': return { aiDiffBonus: 3, infraSynergy: 0 };
+    case 'C': return { aiDiffBonus: 1, infraSynergy: -2 };
+    default: return { aiDiffBonus: 3, infraSynergy: 0 };
+  }
+};
+
+// ============================================================
+// NEW: AI Tactics Generation
+// Generates intelligent tactics for AI teams based on roster analysis
+// ============================================================
+export function generateAITactics(
+  roster: { [key: string]: { player: Player; championId: string } }
+): Tactics {
+  const roles: ('TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT')[] = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
+
+  // 1. Determine teamFocusRole: find the role with highest OVR player
+  let bestRole: 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT' = 'MID';
+  let bestOVR = -1;
+  roles.forEach(role => {
+    const entry = roster[role];
+    if (entry?.player) {
+      const p = entry.player;
+      const ovr = ((p.lanePhase || 50) + (p.mechanics || 50) + (p.macro || 50) + (p.teamfight || 50) + (p.mental || 50)) / 5;
+      if (ovr > bestOVR) {
+        bestOVR = ovr;
+        bestRole = role;
+      }
+    }
+  });
+
+  // 2. Determine gameTempo based on champion scaling distribution
+  let earlyCount = 0;
+  let lateCount = 0;
+  roles.forEach(role => {
+    const champ = findChamp(roster[role]?.championId);
+    if (champ) {
+      if (champ.scaling === 'EARLY') earlyCount++;
+      else if (champ.scaling === 'LATE') lateCount++;
+    }
+  });
+
+  let gameTempo: 'EARLY_SNOWBALL' | 'BALANCED' | 'LATE_SCALING' = 'BALANCED';
+  if (earlyCount >= 3) gameTempo = 'EARLY_SNOWBALL';
+  else if (lateCount >= 3) gameTempo = 'LATE_SCALING';
+
+  // 3. Determine playstyle based on champion style distribution
+  const styleCounts: Record<string, number> = { POKE: 0, TEAMFIGHT: 0, SPLIT: 0, ENGAGE: 0 };
+  roles.forEach(role => {
+    const champ = findChamp(roster[role]?.championId);
+    if (champ && styleCounts[champ.style] !== undefined) {
+      styleCounts[champ.style]++;
+    }
+  });
+
+  let playstyle: 'POKE' | 'TEAMFIGHT' | 'SPLIT' | 'ENGAGE' = 'TEAMFIGHT';
+  let maxStyle = 0;
+  (Object.keys(styleCounts) as ('POKE' | 'TEAMFIGHT' | 'SPLIT' | 'ENGAGE')[]).forEach(s => {
+    if (styleCounts[s] > maxStyle) {
+      maxStyle = styleCounts[s];
+      playstyle = s;
+    }
+  });
+
+  return {
+    teamFocusRole: bestRole,
+    gameTempo,
+    playstyle
+  };
+}
 
 export function simulateLoLMatch(
   homeTeam: Team,
@@ -71,9 +174,34 @@ export function simulateLoLMatch(
     }
   });
 
-  // AI Difficulty Modifier
-  const aiDiffBonusHome = (!isPlayerHome && isPlayerAway) ? 4 : 0;
-  const aiDiffBonusAway = (!isPlayerAway && isPlayerHome) ? 4 : 0;
+  // AI Difficulty Modifier — scaled by team tier for realistic difficulty
+  const homeTierBonus = getTeamTierBonus(homeTeam);
+  const awayTierBonus = getTeamTierBonus(awayTeam);
+  const aiDiffBonusHome = (!isPlayerHome && isPlayerAway) ? homeTierBonus.aiDiffBonus : 0;
+  const aiDiffBonusAway = (!isPlayerAway && isPlayerHome) ? awayTierBonus.aiDiffBonus : 0;
+
+  // Champion Mastery & Tier bonuses per role (pre-computed)
+  const homeMasteryBonuses: Record<string, number> = {};
+  const awayMasteryBonuses: Record<string, number> = {};
+  const homeTierBonuses: Record<string, number> = {};
+  const awayTierBonuses: Record<string, number> = {};
+  const playerRoleAndTeam: Record<string, { role: string; isHome: boolean }> = {};
+
+  roles.forEach(role => {
+    const hEntry = homeRoster[role];
+    const aEntry = awayRoster[role];
+    homeMasteryBonuses[role] = getChampionMasteryBonus(hEntry.player, hEntry.championId);
+    awayMasteryBonuses[role] = getChampionMasteryBonus(aEntry.player, aEntry.championId);
+    homeTierBonuses[role] = getChampionTierBonus(hEntry.championId);
+    awayTierBonuses[role] = getChampionTierBonus(aEntry.championId);
+
+    if (hEntry?.player) {
+      playerRoleAndTeam[hEntry.player.id] = { role, isHome: true };
+    }
+    if (aEntry?.player) {
+      playerRoleAndTeam[aEntry.player.id] = { role, isHome: false };
+    }
+  });
 
   // Global XP counters
   let homeXP = 0;
@@ -167,6 +295,10 @@ export function simulateLoLMatch(
     if (awayTacticalCoachSkill > 0) {
       awayTotalSynergy += parseFloat((awayTacticalCoachSkill / 45).toFixed(2));
     }
+
+    // Team infrastructure synergy bonus (coaching quality, facilities)
+    homeTotalSynergy += homeTierBonus.infraSynergy;
+    awayTotalSynergy += awayTierBonus.infraSynergy;
 
     return {
       homeCounter: homeTotalCounter,
@@ -344,7 +476,20 @@ export function simulateLoLMatch(
       difficultyBonus = aiDiffBonusAway;
     }
 
-    return (baseVal * condMult * aceMultiplier) + bonus + moraleBonus + playstyleBonus + energyPenalty + difficultyBonus + roll + sideBonus + adaptationBonus + seriesFatiguePenalty;
+    let champMasteryBonus = 0;
+    let champTierBonus = 0;
+    const mapping = playerRoleAndTeam[p.id];
+    if (mapping) {
+      if (mapping.isHome) {
+        champMasteryBonus = homeMasteryBonuses[mapping.role] || 0;
+        champTierBonus = homeTierBonuses[mapping.role] || 0;
+      } else {
+        champMasteryBonus = awayMasteryBonuses[mapping.role] || 0;
+        champTierBonus = awayTierBonuses[mapping.role] || 0;
+      }
+    }
+
+    return (baseVal * condMult * aceMultiplier) + bonus + moraleBonus + playstyleBonus + energyPenalty + difficultyBonus + roll + sideBonus + adaptationBonus + seriesFatiguePenalty + champMasteryBonus + champTierBonus;
   };
 
   // Dampen gold lead scaling so early leads don't create mathematical lockouts

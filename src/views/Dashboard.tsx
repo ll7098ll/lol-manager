@@ -26,9 +26,12 @@ import {
   Activity,
   FastForward,
   Scale,
-  Layers
+  Layers,
+  BarChart2,
+  Menu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useIsMobile } from '../hooks/use-mobile';
 import { LastMatchReport } from '../components/LastMatchReport';
 import { PlayerPerformancePanel } from '../components/PlayerPerformancePanel';
 import { Button } from "@/components/ui/button";
@@ -82,6 +85,16 @@ export default function Dashboard() {
   const [selectedFamousTeamName, setSelectedFamousTeamName] = useState<string | null>(null);
   const [selectedFamousPlayerName, setSelectedFamousPlayerName] = useState<string | null>(null);
   const [isAdvancing, setIsAdvancing] = useState(false);
+
+  const isMobile = useIsMobile();
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [leagueMobileTab, setLeagueMobileTab] = useState<'STANDINGS' | 'SCHEDULE' | 'BRACKET'>('STANDINGS');
+
+  useEffect(() => {
+    if (['STANDINGS', 'SCHEDULE', 'BRACKET'].includes(officeSubTab)) {
+      setLeagueMobileTab(officeSubTab as any);
+    }
+  }, [officeSubTab]);
 
   const myTeam = teams.find(t => t.id === playerTeamId);
   const playerRoster = players.filter(p => p.teamId === playerTeamId);
@@ -160,64 +173,66 @@ export default function Dashboard() {
         </AnimatePresence>
 
         {/* SIDEBAR NAVIGATION */}
-        <Sidebar variant="sidebar" collapsible="icon" className="border-r border-border/50 bg-card/40 backdrop-blur-xl shadow-xl z-20">
-          <SidebarHeader className="border-b border-border/50 p-4">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/80 to-rose-600 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(var(--primary),0.4)] shrink-0">
-                {myTeam.logo}
-              </div>
-              <div className="flex flex-col truncate group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0 transition-all">
-                <span className="font-extrabold text-sm truncate tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">{myTeam.name}</span>
-                <span className="text-[9px] font-mono font-medium text-muted-foreground mt-0.5 tracking-widest uppercase flex items-center gap-1">
-                  <Globe size={9} /> {myTeam.region} ESPORTS
-                </span>
-              </div>
-            </div>
-          </SidebarHeader>
-
-          <SidebarContent className="p-3 scrollbar-hide">
-            <SidebarGroup>
-              <div className="mb-2 px-2 text-[10px] font-mono font-bold text-muted-foreground/50 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
-                COMMAND CENTER
-              </div>
-              <SidebarMenu className="gap-1.5">
-                <NavItem id="HOME" icon={Activity} label="지휘 통제실 (Dashboard)" />
-                <NavItem id="ROSTER" icon={Users} label="선수단 주간 훈련 (Roster)" />
-                <NavItem id="TACTICS" icon={Layers} label="팀 매니지먼트 보드 (Tactics)" />
-                <NavItem id="STAFF" icon={User} label="코칭 스태프 (Staff)" />
-                <NavItem id="TRAINING" icon={Dumbbell} label="집중 특훈 코스 (Training)" />
-              </SidebarMenu>
-            </SidebarGroup>
-
-            <SidebarGroup className="mt-4">
-              <div className="mb-2 px-2 text-[10px] font-mono font-bold text-muted-foreground/50 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
-                LEAGUE & OPERATIONS
-              </div>
-              <SidebarMenu className="gap-1.5">
-                <NavItem id="SCHEDULE" icon={Calendar} label="시즌 경기 일정 (Schedule)" />
-                <NavItem id="STANDINGS" icon={Trophy} label="정규 리그 순위 (Standings)" />
-                <NavItem id="BRACKET" icon={Crown} label="결선 플레이오프 (Brackets)" />
-                <NavItem id="STOVE_LEAGUE" icon={DollarSign} label="이적 시장 & 협상 (Transfer)" />
-              </SidebarMenu>
-            </SidebarGroup>
-          </SidebarContent>
-
-          <SidebarFooter className="border-t border-border/50 p-4">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 shadow-inner">
-                    <User size={14} className="text-muted-foreground" />
-                  </div>
-                  <div className="flex flex-col truncate group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0 transition-all">
-                    <span className="font-bold text-xs truncate">나 (Manager)</span>
-                    <span className="text-[10px] font-mono text-primary font-bold">LV.1 ROOKIE</span>
-                  </div>
+        {!isMobile && (
+          <Sidebar variant="sidebar" collapsible="icon" className="border-r border-border/50 bg-card/40 backdrop-blur-xl shadow-xl z-20">
+            <SidebarHeader className="border-b border-border/50 p-4">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/80 to-rose-600 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(var(--primary),0.4)] shrink-0">
+                  {myTeam.logo}
                 </div>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
-        </Sidebar>
+                <div className="flex flex-col truncate group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0 transition-all">
+                  <span className="font-extrabold text-sm truncate tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">{myTeam.name}</span>
+                  <span className="text-[9px] font-mono font-medium text-muted-foreground mt-0.5 tracking-widest uppercase flex items-center gap-1">
+                    <Globe size={9} /> {myTeam.region} ESPORTS
+                  </span>
+                </div>
+              </div>
+            </SidebarHeader>
+
+            <SidebarContent className="p-3 scrollbar-hide">
+              <SidebarGroup>
+                <div className="mb-2 px-2 text-[10px] font-mono font-bold text-muted-foreground/50 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
+                  COMMAND CENTER
+                </div>
+                <SidebarMenu className="gap-1.5">
+                  <NavItem id="HOME" icon={Activity} label="지휘 통제실 (Dashboard)" />
+                  <NavItem id="ROSTER" icon={Users} label="선수단 주간 훈련 (Roster)" />
+                  <NavItem id="TACTICS" icon={Layers} label="팀 매니지먼트 보드 (Tactics)" />
+                  <NavItem id="STAFF" icon={User} label="코칭 스태프 (Staff)" />
+                  <NavItem id="TRAINING" icon={Dumbbell} label="집중 특훈 코스 (Training)" />
+                </SidebarMenu>
+              </SidebarGroup>
+
+              <SidebarGroup className="mt-4">
+                <div className="mb-2 px-2 text-[10px] font-mono font-bold text-muted-foreground/50 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
+                  LEAGUE & OPERATIONS
+                </div>
+                <SidebarMenu className="gap-1.5">
+                  <NavItem id="SCHEDULE" icon={Calendar} label="시즌 경기 일정 (Schedule)" />
+                  <NavItem id="STANDINGS" icon={Trophy} label="정규 리그 순위 (Standings)" />
+                  <NavItem id="BRACKET" icon={Crown} label="결선 플레이오프 (Brackets)" />
+                  <NavItem id="STOVE_LEAGUE" icon={DollarSign} label="이적 시장 & 협상 (Transfer)" />
+                </SidebarMenu>
+              </SidebarGroup>
+            </SidebarContent>
+
+            <SidebarFooter className="border-t border-border/50 p-4">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 shadow-inner">
+                      <User size={14} className="text-muted-foreground" />
+                    </div>
+                    <div className="flex flex-col truncate group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0 transition-all">
+                      <span className="font-bold text-xs truncate">나 (Manager)</span>
+                      <span className="text-[10px] font-mono text-primary font-bold">LV.1 ROOKIE</span>
+                    </div>
+                  </div>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarFooter>
+          </Sidebar>
+        )}
 
         {/* MAIN LAYOUT */}
         <div className="flex-1 flex flex-col min-w-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-background via-background to-muted/20">
@@ -225,8 +240,12 @@ export default function Dashboard() {
           {/* TOP ACTION BAR */}
           <header className="h-16 shrink-0 border-b border-border/40 bg-background/60 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
-              <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
-              <div className="h-4 w-px bg-border/60"></div>
+              {!isMobile && (
+                <>
+                  <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
+                  <div className="h-4 w-px bg-border/60"></div>
+                </>
+              )}
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5 leading-none mb-1">
                   <strong className="text-xs font-mono text-primary uppercase tracking-wider bg-primary/10 px-1.5 py-0.5 rounded shadow-sm">
@@ -318,7 +337,50 @@ export default function Dashboard() {
           </header>
 
           {/* MAIN CONTENT AREA */}
-          <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+          <main className={`flex-1 overflow-auto p-4 sm:p-6 lg:p-8 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent ${isMobile ? 'pb-24' : ''}`}>
+            {isMobile && ['STANDINGS', 'SCHEDULE', 'BRACKET'].includes(officeSubTab) && (
+              <div className="flex gap-1 bg-background p-1 border border-border rounded-xl mb-4 shadow-inner">
+                <button
+                  onClick={() => {
+                    setOfficeSubTab('STANDINGS');
+                    setLeagueMobileTab('STANDINGS');
+                  }}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold text-center border transition-all cursor-pointer ${
+                    officeSubTab === 'STANDINGS'
+                      ? 'bg-rose-500/15 text-rose-450 border-rose-500/25 shadow-sm font-black'
+                      : 'text-muted-foreground border-transparent'
+                  }`}
+                >
+                  순위표
+                </button>
+                <button
+                  onClick={() => {
+                    setOfficeSubTab('SCHEDULE');
+                    setLeagueMobileTab('SCHEDULE');
+                  }}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold text-center border transition-all cursor-pointer ${
+                    officeSubTab === 'SCHEDULE'
+                      ? 'bg-rose-500/15 text-rose-450 border-rose-500/25 shadow-sm font-black'
+                      : 'text-muted-foreground border-transparent'
+                  }`}
+                >
+                  경기일정
+                </button>
+                <button
+                  onClick={() => {
+                    setOfficeSubTab('BRACKET');
+                    setLeagueMobileTab('BRACKET');
+                  }}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold text-center border transition-all cursor-pointer ${
+                    officeSubTab === 'BRACKET'
+                      ? 'bg-rose-500/15 text-rose-450 border-rose-500/25 shadow-sm font-black'
+                      : 'text-muted-foreground border-transparent'
+                  }`}
+                >
+                  플레이오프
+                </button>
+              </div>
+            )}
             {officeSubTab !== 'ARCHIVE' ? (
               <>
                 {/* ---------- HOME DASHBOARD TILE ---------- */}
@@ -547,6 +609,176 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* MOBILE BOTTOM NAVIGATION */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around z-30 px-2 shadow-2xl">
+          {/* Home */}
+          <button
+            onClick={() => {
+              setOfficeSubTab('HOME');
+              setIsMoreMenuOpen(false);
+            }}
+            className={`flex flex-col items-center gap-1 flex-1 py-1.5 transition-colors cursor-pointer ${
+              officeSubTab === 'HOME' ? 'text-primary font-bold' : 'text-muted-foreground'
+            }`}
+          >
+            <Activity size={18} className={officeSubTab === 'HOME' ? 'drop-shadow-[0_0_5px_rgba(var(--primary),0.5)]' : ''} />
+            <span className="text-[10px]">지휘실</span>
+          </button>
+
+          {/* Roster */}
+          <button
+            onClick={() => {
+              setOfficeSubTab('ROSTER');
+              setIsMoreMenuOpen(false);
+            }}
+            className={`flex flex-col items-center gap-1 flex-1 py-1.5 transition-colors cursor-pointer ${
+              officeSubTab === 'ROSTER' ? 'text-primary font-bold' : 'text-muted-foreground'
+            }`}
+          >
+            <Users size={18} className={officeSubTab === 'ROSTER' ? 'drop-shadow-[0_0_5px_rgba(var(--primary),0.5)]' : ''} />
+            <span className="text-[10px]">선수단</span>
+          </button>
+
+          {/* Tactics */}
+          <button
+            onClick={() => {
+              setOfficeSubTab('TACTICS');
+              setIsMoreMenuOpen(false);
+            }}
+            className={`flex flex-col items-center gap-1 flex-1 py-1.5 transition-colors cursor-pointer ${
+              officeSubTab === 'TACTICS' ? 'text-primary font-bold' : 'text-muted-foreground'
+            }`}
+          >
+            <Layers size={18} className={officeSubTab === 'TACTICS' ? 'drop-shadow-[0_0_5px_rgba(var(--primary),0.5)]' : ''} />
+            <span className="text-[10px]">전술판</span>
+          </button>
+
+          {/* League */}
+          <button
+            onClick={() => {
+              setOfficeSubTab(leagueMobileTab);
+              setIsMoreMenuOpen(false);
+            }}
+            className={`flex flex-col items-center gap-1 flex-1 py-1.5 transition-colors cursor-pointer ${
+              ['STANDINGS', 'SCHEDULE', 'BRACKET'].includes(officeSubTab) ? 'text-primary font-bold' : 'text-muted-foreground'
+            }`}
+          >
+            <Trophy size={18} className={['STANDINGS', 'SCHEDULE', 'BRACKET'].includes(officeSubTab) ? 'drop-shadow-[0_0_5px_rgba(var(--primary),0.5)]' : ''} />
+            <span className="text-[10px]">리그</span>
+          </button>
+
+          {/* More */}
+          <button
+            onClick={() => setIsMoreMenuOpen(true)}
+            className={`flex flex-col items-center gap-1 flex-1 py-1.5 transition-colors cursor-pointer ${
+              isMoreMenuOpen || ['STAFF', 'TRAINING', 'STOVE_LEAGUE', 'LAST_MATCH', 'TRENDS', 'ARCHIVE'].includes(officeSubTab) ? 'text-primary font-bold' : 'text-muted-foreground'
+            }`}
+          >
+            <Menu size={18} className={isMoreMenuOpen || ['STAFF', 'TRAINING', 'STOVE_LEAGUE', 'LAST_MATCH', 'TRENDS', 'ARCHIVE'].includes(officeSubTab) ? 'drop-shadow-[0_0_5px_rgba(var(--primary),0.5)]' : ''} />
+            <span className="text-[10px]">더보기</span>
+          </button>
+        </div>
+      )}
+
+      {/* MOBILE MORE MENU DRAWER */}
+      <AnimatePresence>
+        {isMobile && isMoreMenuOpen && (
+          <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsMoreMenuOpen(false)}>
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full bg-card border-t border-border rounded-t-3xl p-6 pb-8 space-y-4 max-w-md shadow-2xl relative"
+            >
+              {/* Pull handle */}
+              <div className="w-12 h-1 bg-border rounded-full mx-auto mb-2" />
+
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-black text-foreground font-heading">🔧 구단 운영 상세 메뉴</h3>
+                <button onClick={() => setIsMoreMenuOpen(false)} className="text-muted-foreground hover:text-foreground text-xs font-mono font-bold">✕ 닫기</button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                <button
+                  onClick={() => {
+                    setOfficeSubTab('STAFF');
+                    setIsMoreMenuOpen(false);
+                  }}
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
+                    officeSubTab === 'STAFF' ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted/30 border-border'
+                  }`}
+                >
+                  <User size={16} /> 코칭 스태프
+                </button>
+
+                <button
+                  onClick={() => {
+                    setOfficeSubTab('TRAINING');
+                    setIsMoreMenuOpen(false);
+                  }}
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
+                    officeSubTab === 'TRAINING' ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted/30 border-border'
+                  }`}
+                >
+                  <Dumbbell size={16} /> 집중 특훈 코스
+                </button>
+
+                <button
+                  onClick={() => {
+                    setOfficeSubTab('STOVE_LEAGUE');
+                    setIsMoreMenuOpen(false);
+                  }}
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
+                    officeSubTab === 'STOVE_LEAGUE' ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted/30 border-border'
+                  }`}
+                >
+                  <DollarSign size={16} /> 이적 시장 & 협상
+                </button>
+
+                <button
+                  onClick={() => {
+                    setOfficeSubTab('LAST_MATCH');
+                    setIsMoreMenuOpen(false);
+                  }}
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
+                    officeSubTab === 'LAST_MATCH' ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted/30 border-border'
+                  }`}
+                >
+                  <Activity size={16} /> 최근 경기 결과
+                </button>
+
+                <button
+                  onClick={() => {
+                    setOfficeSubTab('TRENDS');
+                    setIsMoreMenuOpen(false);
+                  }}
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
+                    officeSubTab === 'TRENDS' ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted/30 border-border'
+                  }`}
+                >
+                  <BarChart2 size={16} /> 선수 성장 지표
+                </button>
+
+                <button
+                  onClick={() => {
+                    setOfficeSubTab('ARCHIVE');
+                    setIsMoreMenuOpen(false);
+                  }}
+                  className={`p-3 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
+                    officeSubTab === 'ARCHIVE' ? 'bg-primary/10 border-primary text-primary' : 'bg-background hover:bg-muted/30 border-border'
+                  }`}
+                >
+                  <BookOpen size={16} /> 역대 기록 보관소
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </SidebarProvider>
   );
 }

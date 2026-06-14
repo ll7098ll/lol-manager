@@ -2,6 +2,7 @@ import { formatCurrency } from "../utils/format";
 import React, { useState, useMemo } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { Player } from '../types';
+import { useIsMobile } from '../hooks/use-mobile';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, 
@@ -43,6 +44,8 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
   } = useGameStore();
 
   // State
+  const isMobile = useIsMobile();
+  const [mobileTab, setMobileTab] = useState<'SCOUT' | 'MY_SQUAD'>('SCOUT');
   const [selectedScoutRole, setSelectedScoutRole] = useState<'ALL' | 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT'>('ALL');
   const [selectedScoutRegion, setSelectedScoutRegion] = useState<'ALL' | 'LCK' | 'LPL' | 'LEC' | 'LCS'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -300,354 +303,482 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
         </div>
       </div>
 
+      {/* Mobile view sub-tabs */}
+      {isMobile && (
+        <div className="flex bg-card/40 border border-border rounded-xl p-1 shrink-0 gap-1">
+          <button
+            onClick={() => setMobileTab('SCOUT')}
+            className={`flex-1 py-2 text-xs font-black rounded-lg transition-all text-center cursor-pointer ${
+              mobileTab === 'SCOUT'
+                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[inset_0_0_8px_rgba(34,211,238,0.1)]'
+                : 'text-muted-foreground hover:text-foreground border border-transparent'
+            }`}
+          >
+            🤝 글로벌 이적시장
+          </button>
+          <button
+            onClick={() => setMobileTab('MY_SQUAD')}
+            className={`flex-1 py-2 text-xs font-black rounded-lg transition-all text-center cursor-pointer ${
+              mobileTab === 'MY_SQUAD'
+                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[inset_0_0_8px_rgba(34,211,238,0.1)]'
+                : 'text-muted-foreground hover:text-foreground border border-transparent'
+            }`}
+          >
+            👥 아군 활성 로스터
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start flex-1 min-h-0 overflow-visible">
         
         {/* LEFT COMPONENT: Global Transfer Scout Pool (col-span-8) */}
-        <div className="xl:col-span-8 flex flex-col gap-3 h-full min-h-0 bg-card/40 backdrop-blur-md border border-border rounded-xl p-4 pb-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] overflow-hidden">
-          
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pb-2 border-b border-border/60">
-            <div>
-              <h3 className="text-sm font-extrabold text-cyan-400 flex items-center gap-1.5 font-mono drop-shadow-[0_0_2px_rgba(34,211,238,0.5)]">
-                🤝 글로벌 이적시장 라이브 홀 (SCOUT DIRECTORY)
-              </h3>
-              <p className="text-[10px] text-muted-foreground font-mono tracking-tight">FA 및 타지역 이적 매물을 조회하고 영입 타협안을 수립해 스쿼드를 보강하십시오.</p>
-            </div>
-          </div>
-
-          {/* Detailed Filtering & Search Control Bar */}
-          <div className="bg-background p-2.5 rounded-xl border border-border space-y-2.5 shrink-0 shadow-inner shadow-black/50">
+        {(!isMobile || mobileTab === 'SCOUT') && (
+          <div className="xl:col-span-8 flex flex-col gap-3 h-full min-h-0 bg-card/40 backdrop-blur-md border border-border rounded-xl p-4 pb-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] overflow-hidden">
             
-            <div className="flex flex-col md:flex-row gap-2 items-stretch">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pb-2 border-b border-border/60">
+              <div>
+                <h3 className="text-sm font-extrabold text-cyan-400 flex items-center gap-1.5 font-mono drop-shadow-[0_0_2px_rgba(34,211,238,0.5)]">
+                  🤝 글로벌 이적시장 라이브 홀 (SCOUT DIRECTORY)
+                </h3>
+                <p className="text-[10px] text-muted-foreground font-mono tracking-tight">FA 및 타지역 이적 매물을 조회하고 영입 타협안을 수립해 스쿼드를 보강하십시오.</p>
+              </div>
+            </div>
+
+            {/* Detailed Filtering & Search Control Bar */}
+            <div className="bg-background p-2.5 rounded-xl border border-border space-y-2.5 shrink-0 shadow-inner shadow-black/50">
               
-              {/* Search bar */}
-              <div className="relative flex-1">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="선수 아이디 또는 본명 검색..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-background/50 border border-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-foreground placeholder-muted-foreground font-mono focus:outline-none focus:border-cyan-400/40 focus:ring-1 focus:ring-cyan-400/20"
-                />
+              <div className="flex flex-col md:flex-row gap-2 items-stretch">
+                
+                {/* Search bar */}
+                <div className="relative flex-1">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="선수 아이디 또는 본명 검색..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-background/50 border border-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-foreground placeholder-muted-foreground font-mono focus:outline-none focus:border-cyan-400/40 focus:ring-1 focus:ring-cyan-400/20"
+                  />
+                </div>
+
+                {/* Sort selector */}
+                <div className="flex items-center gap-1.5 bg-background/50 border border-border px-2 rounded-lg shrink-0">
+                  <ArrowUpDown size={12} className="text-muted-foreground" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-transparent border-none text-[11px] text-foreground font-bold font-mono focus:outline-none cursor-pointer pr-1 py-1"
+                  >
+                    <option value="OVR_DESC" className="bg-background text-foreground">최고 전투력 순 (Highest OVR)</option>
+                    <option value="POTENTIAL_DESC" className="bg-background text-foreground">최대 성숙 잠재력 순 (Potential)</option>
+                    <option value="COST_ASC" className="bg-background text-foreground">최저 비용 순 (Lowest Cost)</option>
+                    <option value="COST_DESC" className="bg-background text-foreground">최고 이적료 순 (Highest Cost)</option>
+                    <option value="AGE_ASC" className="bg-background text-foreground">최연소 유망주 순 (Youngest)</option>
+                    <option value="OVR_ASC" className="bg-background text-foreground">최저 기량 순 (Lowest OVR)</option>
+                  </select>
+                </div>
+
               </div>
 
-              {/* Sort selector */}
-              <div className="flex items-center gap-1.5 bg-background/50 border border-border px-2 rounded-lg shrink-0">
-                <ArrowUpDown size={12} className="text-muted-foreground" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-transparent border-none text-[11px] text-foreground font-bold font-mono focus:outline-none cursor-pointer pr-1 py-1"
-                >
-                  <option value="OVR_DESC" className="bg-background text-foreground">최고 전투력 순 (Highest OVR)</option>
-                  <option value="POTENTIAL_DESC" className="bg-background text-foreground">최대 성숙 잠재력 순 (Potential)</option>
-                  <option value="COST_ASC" className="bg-background text-foreground">최저 비용 순 (Lowest Cost)</option>
-                  <option value="COST_DESC" className="bg-background text-foreground">최고 이적료 순 (Highest Cost)</option>
-                  <option value="AGE_ASC" className="bg-background text-foreground">최연소 유망주 순 (Youngest)</option>
-                  <option value="OVR_ASC" className="bg-background text-foreground">최저 기량 순 (Lowest OVR)</option>
-                </select>
+              <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-2 border-t border-border/60 pt-2 text-[10px]">
+                
+                {/* Role filter */}
+                <div className="flex items-center gap-1 bg-background/50 p-0.5 rounded-lg border border-border">
+                  <span className="text-[9px] text-muted-foreground font-mono uppercase px-1.5 font-bold">라인:</span>
+                  {(['ALL', 'TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'] as const).map((role) => (
+                    <button
+                      key={role}
+                      onClick={() => setSelectedScoutRole(role)}
+                      className={`px-2 py-1 rounded text-[10px] font-extrabold cursor-pointer transition-colors ${
+                        selectedScoutRole === role
+                          ? 'bg-cyan-400/20 text-cyan-400 border border-cyan-400/40 shadow-inner shadow-black/40'
+                          : 'text-muted-foreground hover:text-foreground border border-transparent'
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Region filter */}
+                <div className="flex items-center gap-1 bg-background/50 p-0.5 rounded-lg border border-border">
+                  <span className="text-[9px] text-muted-foreground font-mono uppercase px-1.5 font-bold">지역:</span>
+                  {(['ALL', 'LCK', 'LPL', 'LEC', 'LCS'] as const).map((reg) => (
+                    <button
+                      key={reg}
+                      onClick={() => setSelectedScoutRegion(reg)}
+                      className={`px-2 py-1 rounded text-[10px] font-extrabold cursor-pointer transition-colors ${
+                        selectedScoutRegion === reg
+                          ? 'bg-primary/20 text-primary border border-primary/40 shadow-inner shadow-black/40'
+                          : 'text-muted-foreground hover:text-foreground border border-transparent'
+                      }`}
+                    >
+                      {reg}
+                    </button>
+                  ))}
+                </div>
+
               </div>
 
             </div>
 
-            <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-2 border-t border-border/60 pt-2 text-[10px]">
-              
-              {/* Role filter */}
-              <div className="flex items-center gap-1 bg-background/50 p-0.5 rounded-lg border border-border">
-                <span className="text-[9px] text-muted-foreground font-mono uppercase px-1.5 font-bold">라인:</span>
-                {(['ALL', 'TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'] as const).map((role) => (
-                  <button
-                    key={role}
-                    onClick={() => setSelectedScoutRole(role)}
-                    className={`px-2 py-1 rounded text-[10px] font-extrabold cursor-pointer transition-colors ${
-                      selectedScoutRole === role
-                        ? 'bg-cyan-400/20 text-cyan-400 border border-cyan-400/40 shadow-inner shadow-black/40'
-                        : 'text-muted-foreground hover:text-foreground border border-transparent'
-                    }`}
-                  >
-                    {role}
-                  </button>
-                ))}
-              </div>
+            {/* Player List Grid container with relative sizing for scroll */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin overflow-x-auto space-y-0 relative border border-border/50 rounded-lg bg-background/20 scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent">
+              {isMobile ? (
+                <div className="flex flex-col gap-2 p-2">
+                  {filteredAndSortedPlayers.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center p-12 text-muted-foreground/60 font-mono text-center">
+                      <Compass size={40} className="text-muted-foreground/40 mb-2 animate-pulse" />
+                      <p className="text-xs font-bold text-muted-foreground">매칭되는 이적시장 대상 선수가 없습니다.</p>
+                      <p className="text-[10px] mt-1 text-muted-foreground/80">기타 포지션 필터 또는 지역 검색 명단을 변경해 확인하십시오.</p>
+                    </div>
+                  ) : (
+                    filteredAndSortedPlayers.map((p) => {
+                      const otherTeam = teams.find(t => t.id === p.teamId);
+                      const currentOverall = getOvr(p);
+                      const buyoutCost = getBuyoutFee(p);
+                      
+                      const starterId = startingLineup[p.role];
+                      const starter = players.find(s => s.id === starterId);
+                      const starterOvrValue = starter ? getOvr(starter) : 0;
+                      const ovrDiff = starter ? currentOverall - starterOvrValue : null;
 
-              {/* Region filter */}
-              <div className="flex items-center gap-1 bg-background/50 p-0.5 rounded-lg border border-border">
-                <span className="text-[9px] text-muted-foreground font-mono uppercase px-1.5 font-bold">지역:</span>
-                {(['ALL', 'LCK', 'LPL', 'LEC', 'LCS'] as const).map((reg) => (
-                  <button
-                    key={reg}
-                    onClick={() => setSelectedScoutRegion(reg)}
-                    className={`px-2 py-1 rounded text-[10px] font-extrabold cursor-pointer transition-colors ${
-                      selectedScoutRegion === reg
-                        ? 'bg-primary/20 text-primary border border-primary/40 shadow-inner shadow-black/40'
-                        : 'text-muted-foreground hover:text-foreground border border-transparent'
-                    }`}
-                  >
-                    {reg}
-                  </button>
-                ))}
-              </div>
+                      return (
+                        <div key={p.id} className="bg-background/60 p-3 rounded-xl border border-border flex flex-col gap-2 shadow-inner shadow-black/30">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shadow-inner shadow-black/50 ${
+                                p.role === 'MID' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                p.role === 'TOP' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                p.role === 'JUNGLE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                p.role === 'ADC' ? 'bg-destructive/10 text-destructive border-destructive/20' : 
+                                'bg-cyan-400/10 text-cyan-400 border-cyan-400/20'
+                              }`}>
+                                {p.role}
+                              </span>
+                              <div>
+                                <div className="font-extrabold text-foreground text-xs">
+                                  {p.summonerName} <span className="text-[9px] text-muted-foreground font-normal">({p.name})</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  {otherTeam ? (
+                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                      <span>{otherTeam.logo}</span>
+                                      <span className="truncate max-w-[80px]">{otherTeam.name}</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/10 px-1 rounded border border-emerald-500/25">FA</span>
+                                  )}
+                                  <span className="text-[10px] text-muted-foreground/60">•</span>
+                                  <span className="text-[10px] text-muted-foreground">나이 {p.age}</span>
+                                </div>
+                              </div>
+                            </div>
 
-            </div>
-
-          </div>
-
-          {/* Player List Grid container with relative sizing for scroll */}
-          <div className="flex-1 overflow-y-auto scrollbar-thin overflow-x-auto space-y-0 relative border border-border/50 rounded-lg bg-background/20 scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent">
-            <table className="w-full text-left text-[11px] font-mono whitespace-nowrap min-w-[595px]">
-              <thead className="bg-background/90 sticky top-0 z-20 shadow-sm border-b border-border/80">
-                <tr className="text-[10px] uppercase text-muted-foreground">
-                  <th className="py-2 px-1.5 font-black tracking-tight w-12 text-center">포지션</th>
-                  <th className="py-2 px-1.5 font-black tracking-tight">선수명</th>
-                  <th className="py-2 px-1.5 font-black tracking-tight max-w-[124px]">소속팀</th>
-                  <th className="py-2 px-1 font-black tracking-tight w-8 text-center border-l border-border/20">나이</th>
-                  <th className="py-2 px-1 font-black tracking-tight w-8 text-center border-l border-border/20">POT</th>
-                  <th className="py-2 px-1.5 font-black tracking-tight w-24 text-center border-l border-border/20">능력치 (L/M/O/T)</th>
-                  <th className="py-2 px-1.5 font-black tracking-tight w-16 text-center border-l border-border/20">OVR (편차)</th>
-                  <th className="py-2 px-2 font-black tracking-tight text-right border-l border-border/20">이적료/보증금</th>
-                  <th className="py-2 px-1.5 font-black tracking-tight w-14 text-center border-l border-border/20">협상</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {filteredAndSortedPlayers.length === 0 ? (
-                  <tr>
-                    <td colSpan={9}>
-                      <div className="h-full flex flex-col items-center justify-center p-12 text-muted-foreground/60 font-mono text-center">
-                        <Compass size={40} className="text-muted-foreground/40 mb-2 animate-pulse" />
-                        <p className="text-xs font-bold text-muted-foreground">매칭되는 이적시장 대상 선수가 없습니다.</p>
-                        <p className="text-[10px] mt-1 text-muted-foreground/80">기타 포지션 필터 또는 지역 검색 명단을 변경해 확인하십시오.</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredAndSortedPlayers.map((p) => {
-                    const otherTeam = teams.find(t => t.id === p.teamId);
-                    const currentOverall = getOvr(p);
-                    const buyoutCost = getBuyoutFee(p);
-                    
-                    const starterId = startingLineup[p.role];
-                    const starter = players.find(s => s.id === starterId);
-                    const starterOvrValue = starter ? getOvr(starter) : 0;
-                    const ovrDiff = starter ? currentOverall - starterOvrValue : null;
-
-                    return (
-                      <tr key={p.id} className="bg-background/40 hover:bg-muted/30 transition-colors group">
-                        <td className="py-1.5 px-1.5 text-center">
-                          <span className={`text-[9px] font-black px-1 py-0.5 w-[46px] inline-block text-center rounded border shadow-inner shadow-black/50 ${
-                            p.role === 'MID' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                            p.role === 'TOP' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                            p.role === 'JUNGLE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                            p.role === 'ADC' ? 'bg-destructive/10 text-destructive border-destructive/20' : 
-                            'bg-cyan-400/10 text-cyan-400 border-cyan-400/20'
-                          }`}>
-                            {p.role}
-                          </span>
-                        </td>
-                        <td className="py-1.5 px-1.5">
-                          <div className="font-extrabold text-foreground flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 shadow-sm group-hover:text-primary transition-colors">
-                            <span>{p.summonerName}</span>
-                            <span className="text-[9px] text-muted-foreground font-normal">({p.name})</span>
+                            <div className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <span className={`font-black text-sm ${
+                                  currentOverall >= 88 ? 'text-amber-400 drop-shadow-[0_0_2px_rgba(251,191,36,0.5)]' :
+                                  currentOverall >= 80 ? 'text-purple-400' :
+                                  currentOverall >= 72 ? 'text-blue-400' : 'text-foreground'
+                                }`}>OVR {currentOverall}</span>
+                                {ovrDiff !== null && (
+                                  <span className={`text-[9px] font-black ${
+                                    ovrDiff > 0 ? 'text-cyan-400' : ovrDiff < 0 ? 'text-destructive' : 'text-muted-foreground'
+                                  }`}>
+                                    ({ovrDiff > 0 ? `+${ovrDiff}` : ovrDiff < 0 ? `${ovrDiff}` : '='})
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[9px] text-emerald-400 font-bold">POT {p.potential || 85}</span>
+                            </div>
                           </div>
-                        </td>
-                        <td className="py-1.5 px-1.5 max-w-[124px] truncate">
-                          <div className="flex items-center gap-1 text-[10px] truncate" title={otherTeam?.name || '자유계약(FA)'}>
-                            {otherTeam ? (
-                              <>
-                                <span className="shrink-0">{otherTeam.logo}</span>
-                                <span className="text-foreground truncate">{otherTeam.name}</span>
-                              </>
-                            ) : (
-                              <span className="text-emerald-400 font-bold bg-emerald-500/10 px-1 py-0.2 rounded border border-emerald-500/25">FA</span>
-                            )}
+
+                          <div className="grid grid-cols-2 items-center bg-background/40 px-2.5 py-1.5 rounded-lg border border-border/40 text-[10px] font-mono gap-1">
+                            <div className="flex gap-1.5 text-muted-foreground">
+                              <span>L <strong className="text-foreground/80">{p.lanePhase}</strong></span>
+                              <span>M <strong className="text-foreground/80">{p.mechanics}</strong></span>
+                              <span>O <strong className="text-foreground/80">{p.macro}</strong></span>
+                              <span>T <strong className="text-foreground/80">{p.teamfight}</strong></span>
+                            </div>
+                            <div className="text-right text-[10px] font-bold text-primary flex items-center justify-end gap-1">
+                              <span>{p.teamId === 'FA' ? '보증금' : '바이아웃'}:</span>
+                              <span>{buyoutCost.toLocaleString()}만</span>
+                            </div>
                           </div>
-                        </td>
-                        <td className="py-1.5 px-1 text-center text-muted-foreground border-l border-border/10">{p.age}</td>
-                        <td className="py-1.5 px-1 text-center border-l border-border/10">
-                           <span className="text-[10px] font-bold text-emerald-400">{p.potential || 85}</span>
-                        </td>
-                        <td className="py-1.5 px-1.5 text-center text-[10px] text-muted-foreground font-mono tracking-tight border-l border-border/10">
-                          <span className="text-foreground/80">{p.lanePhase}</span>/<span className="text-foreground/80">{p.mechanics}</span>/<span className="text-foreground/80">{p.macro}</span>/<span className="text-foreground/80">{p.teamfight}</span>
-                        </td>
-                        <td className="py-1.5 px-1.5 text-center border-l border-border/10">
-                          <div className="flex items-center justify-center gap-1.5">
-                             <span className={`font-black text-xs ${
-                               currentOverall >= 88 ? 'text-amber-400 drop-shadow-[0_0_2px_rgba(251,191,36,0.5)]' :
-                               currentOverall >= 80 ? 'text-purple-400' :
-                               currentOverall >= 72 ? 'text-blue-400' : 'text-foreground'
-                             }`}>{currentOverall}</span>
-                             {ovrDiff !== null && (
-                               <span className={`text-[8px] font-black shrink-0 ${
-                                 ovrDiff > 0 ? 'text-cyan-400' : ovrDiff < 0 ? 'text-destructive' : 'text-muted-foreground'
-                               }`}>
-                                  {ovrDiff > 0 ? `+${ovrDiff}` : ovrDiff < 0 ? `${ovrDiff}` : '='}
-                               </span>
-                             )}
+
+                          <div className="flex justify-end pt-0.5">
+                            <button
+                              onClick={() => startNegotiation(p, false)}
+                              className="w-full bg-cyan-500/10 hover:bg-cyan-400/20 text-cyan-400 border border-cyan-500/30 text-xs font-black py-1.5 rounded-lg transition-all active:scale-[0.98] cursor-pointer text-center"
+                            >
+                              🤝 이적 협상 제안
+                            </button>
                           </div>
-                        </td>
-                        <td className="py-1.5 px-2 text-right border-l border-border/10">
-                          <div className="flex flex-col items-end justify-center select-none leading-tight">
-                            <span className="font-black text-[10px] text-primary">{buyoutCost.toLocaleString()}만</span>
-                            <span className="text-[7.5px] text-muted-foreground/70">{p.teamId === 'FA' ? '보증금' : '바이아웃'}</span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                <table className="w-full text-left text-[11px] font-mono whitespace-nowrap min-w-[595px]">
+                  <thead className="bg-background/90 sticky top-0 z-20 shadow-sm border-b border-border/80">
+                    <tr className="text-[10px] uppercase text-muted-foreground">
+                      <th className="py-2 px-1.5 font-black tracking-tight w-12 text-center">포지션</th>
+                      <th className="py-2 px-1.5 font-black tracking-tight">선수명</th>
+                      <th className="py-2 px-1.5 font-black tracking-tight max-w-[124px]">소속팀</th>
+                      <th className="py-2 px-1 font-black tracking-tight w-8 text-center border-l border-border/20">나이</th>
+                      <th className="py-2 px-1 font-black tracking-tight w-8 text-center border-l border-border/20">POT</th>
+                      <th className="py-2 px-1.5 font-black tracking-tight w-24 text-center border-l border-border/20">능력치 (L/M/O/T)</th>
+                      <th className="py-2 px-1.5 font-black tracking-tight w-16 text-center border-l border-border/20">OVR (편차)</th>
+                      <th className="py-2 px-2 font-black tracking-tight text-right border-l border-border/20">이적료/보증금</th>
+                      <th className="py-2 px-1.5 font-black tracking-tight w-14 text-center border-l border-border/20">협상</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {filteredAndSortedPlayers.length === 0 ? (
+                      <tr>
+                        <td colSpan={9}>
+                          <div className="h-full flex flex-col items-center justify-center p-12 text-muted-foreground/60 font-mono text-center">
+                            <Compass size={40} className="text-muted-foreground/40 mb-2 animate-pulse" />
+                            <p className="text-xs font-bold text-muted-foreground">매칭되는 이적시장 대상 선수가 없습니다.</p>
+                            <p className="text-[10px] mt-1 text-muted-foreground/80">기타 포지션 필터 또는 지역 검색 명단을 변경해 확인하십시오.</p>
                           </div>
-                        </td>
-                        <td className="py-1.5 px-1.5 text-center border-l border-border/10">
-                          <button
-                            onClick={() => startNegotiation(p, false)}
-                            className="bg-cyan-500/10 hover:bg-cyan-400/20 text-cyan-400 border border-cyan-500/30 text-[10px] font-black px-2 py-0.5 rounded transition-all hover:scale-[1.03] active:scale-95 cursor-pointer shadow-sm"
-                          >
-                            협상
-                          </button>
                         </td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                    ) : (
+                      filteredAndSortedPlayers.map((p) => {
+                        const otherTeam = teams.find(t => t.id === p.teamId);
+                        const currentOverall = getOvr(p);
+                        const buyoutCost = getBuyoutFee(p);
+                        
+                        const starterId = startingLineup[p.role];
+                        const starter = players.find(s => s.id === starterId);
+                        const starterOvrValue = starter ? getOvr(starter) : 0;
+                        const ovrDiff = starter ? currentOverall - starterOvrValue : null;
 
-          {/* Transfer market guidelines info */}
-          <div className="bg-primary/5 border border-primary/20 p-3 rounded-xl text-[10px] text-muted-foreground font-mono flex items-start gap-2 leading-relaxed shrink-0 select-none shadow-[inset_0_0_10px_rgba(var(--primary),0.05)]">
-            <ShieldAlert size={14} className="text-primary/70 shrink-0 mt-0.5" />
-            <div>
-              <span className="text-primary font-bold block drop-shadow-sm mb-0.5">이적시장 성사 수칙 및 규정 (Transfer Policy)</span>
-              자유계약선수(FA)는 원본 연봉 스펙의 <strong className="text-foreground">50% 계약 보증비</strong>만 소모하나, 이미 활성 구단에 입단한 선수를 차출 시 계약 가중 보증서로 인해 원 연봉의 <strong className="text-foreground">150%에 상응하는 바이아웃 보상액</strong>이 집행됩니다. 영입 시 즉시 벤치 라우터 로스터에 편입됩니다.
+                        return (
+                          <tr key={p.id} className="bg-background/40 hover:bg-muted/30 transition-colors group">
+                            <td className="py-1.5 px-1.5 text-center">
+                              <span className={`text-[9px] font-black px-1 py-0.5 w-[46px] inline-block text-center rounded border shadow-inner shadow-black/50 ${
+                                p.role === 'MID' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                p.role === 'TOP' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                p.role === 'JUNGLE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                p.role === 'ADC' ? 'bg-destructive/10 text-destructive border-destructive/20' : 
+                                'bg-cyan-400/10 text-cyan-400 border-cyan-400/20'
+                              }`}>
+                                {p.role}
+                              </span>
+                            </td>
+                            <td className="py-1.5 px-1.5">
+                              <div className="font-extrabold text-foreground flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 shadow-sm group-hover:text-primary transition-colors">
+                                <span>{p.summonerName}</span>
+                                <span className="text-[9px] text-muted-foreground font-normal">({p.name})</span>
+                              </div>
+                            </td>
+                            <td className="py-1.5 px-1.5 max-w-[124px] truncate">
+                              <div className="flex items-center gap-1 text-[10px] truncate" title={otherTeam?.name || '자유계약(FA)'}>
+                                {otherTeam ? (
+                                  <>
+                                    <span className="shrink-0">{otherTeam.logo}</span>
+                                    <span className="text-foreground truncate">{otherTeam.name}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-emerald-400 font-bold bg-emerald-500/10 px-1 py-0.2 rounded border border-emerald-500/25">FA</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-1.5 px-1 text-center text-muted-foreground border-l border-border/10">{p.age}</td>
+                            <td className="py-1.5 px-1 text-center border-l border-border/10">
+                               <span className="text-[10px] font-bold text-emerald-400">{p.potential || 85}</span>
+                            </td>
+                            <td className="py-1.5 px-1.5 text-center text-[10px] text-muted-foreground font-mono tracking-tight border-l border-border/10">
+                              <span className="text-foreground/80">{p.lanePhase}</span>/<span className="text-foreground/80">{p.mechanics}</span>/<span className="text-foreground/80">{p.macro}</span>/<span className="text-foreground/80">{p.teamfight}</span>
+                            </td>
+                            <td className="py-1.5 px-1.5 text-center border-l border-border/10">
+                              <div className="flex items-center justify-center gap-1.5">
+                                 <span className={`font-black text-xs ${
+                                   currentOverall >= 88 ? 'text-amber-400 drop-shadow-[0_0_2px_rgba(251,191,36,0.5)]' :
+                                   currentOverall >= 80 ? 'text-purple-400' :
+                                   currentOverall >= 72 ? 'text-blue-400' : 'text-foreground'
+                                 }`}>{currentOverall}</span>
+                                 {ovrDiff !== null && (
+                                   <span className={`text-[8px] font-black shrink-0 ${
+                                     ovrDiff > 0 ? 'text-cyan-400' : ovrDiff < 0 ? 'text-destructive' : 'text-muted-foreground'
+                                   }`}>
+                                      {ovrDiff > 0 ? `+${ovrDiff}` : ovrDiff < 0 ? `${ovrDiff}` : '='}
+                                   </span>
+                                 )}
+                              </div>
+                            </td>
+                            <td className="py-1.5 px-2 text-right border-l border-border/10">
+                              <div className="flex flex-col items-end justify-center select-none leading-tight">
+                                <span className="font-black text-[10px] text-primary">{buyoutCost.toLocaleString()}만</span>
+                                <span className="text-[7.5px] text-muted-foreground/70">{p.teamId === 'FA' ? '보증금' : '바이아웃'}</span>
+                              </div>
+                            </td>
+                            <td className="py-1.5 px-1.5 text-center border-l border-border/10">
+                              <button
+                                onClick={() => startNegotiation(p, false)}
+                                className="bg-cyan-500/10 hover:bg-cyan-400/20 text-cyan-400 border border-cyan-500/30 text-[10px] font-black px-2 py-0.5 rounded transition-all hover:scale-[1.03] active:scale-95 cursor-pointer shadow-sm"
+                              >
+                                협상
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
-          </div>
 
-        </div>
+            {/* Transfer market guidelines info */}
+            <div className="bg-primary/5 border border-primary/20 p-3 rounded-xl text-[10px] text-muted-foreground font-mono flex items-start gap-2 leading-relaxed shrink-0 select-none shadow-[inset_0_0_10px_rgba(var(--primary),0.05)]">
+              <ShieldAlert size={14} className="text-primary/70 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-primary font-bold block drop-shadow-sm mb-0.5">이적시장 성사 수칙 및 규정 (Transfer Policy)</span>
+                자유계약선수(FA)는 원본 연봉 스펙의 <strong className="text-foreground">50% 계약 보증비</strong>만 소모하나, 이미 활성 구단에 입단한 선수를 차출 시 계약 가중 보증서로 인해 원 연봉의 <strong className="text-foreground">150%에 상응하는 바이아웃 보상액</strong>이 집행됩니다. 영입 시 즉시 벤치 라우터 로스터에 편입됩니다.
+              </div>
+            </div>
+
+          </div>
+        )}
 
         {/* RIGHT COMPONENT: Owned Club Roster management (col-span-4) */}
-        <div className="xl:col-span-4 flex flex-col gap-3 h-full min-h-0 bg-card/40 backdrop-blur-md border border-border rounded-xl p-4 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] overflow-hidden">
-          
-          <div className="border-b border-border/60 pb-2">
-            <h3 className="text-sm font-extrabold text-cyan-400 flex items-center gap-1.5 font-mono drop-shadow-[0_0_2px_rgba(34,211,238,0.5)]">
-              👥 아군 구단 활성 로스터 (SQUAD LIST)
-            </h3>
-            <p className="text-[10px] text-muted-foreground font-mono">현 로스터 라인업 관리, 재계약 협상 및 방출 제반을 수립합니다.</p>
-          </div>
+        {(!isMobile || mobileTab === 'MY_SQUAD') && (
+          <div className="xl:col-span-4 flex flex-col gap-3 h-full min-h-0 bg-card/40 backdrop-blur-md border border-border rounded-xl p-4 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] overflow-hidden">
+            
+            <div className="border-b border-border/60 pb-2">
+              <h3 className="text-sm font-extrabold text-cyan-400 flex items-center gap-1.5 font-mono drop-shadow-[0_0_2px_rgba(34,211,238,0.5)]">
+                👥 아군 구단 활성 로스터 (SQUAD LIST)
+              </h3>
+              <p className="text-[10px] text-muted-foreground font-mono">현 로스터 라인업 관리, 재계약 협상 및 방출 제반을 수립합니다.</p>
+            </div>
 
-          {/* Player Roster container list */}
-          <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 space-y-2.5">
-            {playerRoster.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center p-8 text-muted-foreground/60 text-center font-mono">
-                <UserX size={32} className="text-muted-foreground/40 mb-2" />
-                <p className="text-xs">현재 등록된 소속 구단 선수가 없습니다.</p>
-              </div>
-            ) : (
-              playerRoster.map((p) => {
-                const isStarting = Object.values(startingLineup).includes(p.id);
-                const assignedRole = Object.keys(startingLineup).find(
-                  key => startingLineup[key as 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT'] === p.id
-                ) as 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT' | undefined;
-                const currentOverall = getOvr(p);
+            {/* Player Roster container list */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin pr-1 space-y-2.5">
+              {playerRoster.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center p-8 text-muted-foreground/60 text-center font-mono">
+                  <UserX size={32} className="text-muted-foreground/40 mb-2" />
+                  <p className="text-xs">현재 등록된 소속 구단 선수가 없습니다.</p>
+                </div>
+              ) : (
+                playerRoster.map((p) => {
+                  const isStarting = Object.values(startingLineup).includes(p.id);
+                  const assignedRole = Object.keys(startingLineup).find(
+                    key => startingLineup[key as 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT'] === p.id
+                  ) as 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT' | undefined;
+                  const currentOverall = getOvr(p);
 
-                return (
-                  <div key={p.id} className="bg-background/60 p-3.5 rounded-xl border border-border space-y-3 relative overflow-hidden shadow-inner shadow-black/30">
-                    
-                    {/* Upper segment */}
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-extrabold text-foreground text-xs font-mono drop-shadow-sm">
-                            {p.summonerName}
-                          </span>
-                          <span className="text-[9px] text-muted-foreground font-normal">({p.name})</span>
-                        </div>
-
-                        {/* Starting/Sub designation info */}
-                        <div className="flex items-center gap-1.5 mt-1">
-                          {isStarting ? (
-                            <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-cyan-400/10 text-cyan-400 border border-cyan-400/40 font-mono shadow-[0_0_5px_rgba(34,211,238,0.2)]">
-                              주전선수 • {assignedRole}
-                            </span>
-                          ) : (
-                            <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-background text-muted-foreground border border-border font-mono shadow-inner shadow-black/40">
-                              벤치후보 (SUB)
-                            </span>
-                          )}
-                          <span className="text-[9px] text-muted-foreground/80 font-mono">
-                            {p.age}세
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="text-right flex flex-col items-end">
-                        <span className="text-xs font-mono font-black text-cyan-400 drop-shadow-[0_0_2px_rgba(34,211,238,0.5)]">OVR {currentOverall}</span>
-                        <div className="flex gap-1 text-[8px] text-muted-foreground font-mono mt-0.5">
-                          <span>L <strong className="text-foreground/80">{p.lanePhase}</strong></span>
-                          <span>M <strong className="text-foreground/80">{p.mechanics}</strong></span>
-                          <span>O <strong className="text-foreground/80">{p.macro}</strong></span>
-                          <span>T <strong className="text-foreground/80">{p.teamfight}</strong></span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Financial details */}
-                    <div className="text-[9px] font-mono text-muted-foreground flex justify-between bg-background/40 px-2 py-1 rounded border border-border/60 leading-none select-none shadow-inner shadow-black/20">
-                      <span>급료 청구액: <strong className="text-foreground">{p.salary}만원</strong></span>
-                      <span>남은 기간: <strong className="text-destructive drop-shadow-sm">{p.contractYears}년</strong></span>
-                    </div>
-
-                    {/* Management and interactive buttons */}
-                    <div className="space-y-1.5 pt-1.5 border-t border-border/60">
+                  return (
+                    <div key={p.id} className="bg-background/60 p-3.5 rounded-xl border border-border space-y-3 relative overflow-hidden shadow-inner shadow-black/30">
                       
-                      {/* Starter designation selector line */}
-                      <div className="bg-background p-1 rounded-lg border border-border flex items-center justify-between gap-1 shadow-inner shadow-black/30">
-                        <span className="text-[8px] font-mono font-extrabold text-muted-foreground pl-1 select-none">포지션 변경:</span>
-                        <div className="flex gap-0.5">
-                          {(['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'] as const).map((role) => (
-                            <button
-                              key={role}
-                              onClick={() => {
-                                updateStartingLineup(role, p.id);
-                                showToast(`${p.summonerName} 선수를 ${role} 선발로 명명했습니다.`, 'success');
-                              }}
-                              className={`text-[8.5px] font-mono font-black py-0.5 px-1.5 rounded cursor-pointer transition-all ${
-                                assignedRole === role
-                                  ? 'bg-primary text-primary-foreground font-black shadow-[0_0_10px_rgba(var(--primary),0.5)]'
-                                  : 'bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent'
-                              }`}
-                            >
-                              {role[0]}
-                            </button>
-                          ))}
+                      {/* Upper segment */}
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-extrabold text-foreground text-xs font-mono drop-shadow-sm">
+                              {p.summonerName}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground font-normal">({p.name})</span>
+                          </div>
+
+                          {/* Starting/Sub designation info */}
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {isStarting ? (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-cyan-400/10 text-cyan-400 border border-cyan-400/40 font-mono shadow-[0_0_5px_rgba(34,211,238,0.2)]">
+                                주전선수 • {assignedRole}
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-background text-muted-foreground border border-border font-mono shadow-inner shadow-black/40">
+                                벤치후보 (SUB)
+                              </span>
+                            )}
+                            <span className="text-[9px] text-muted-foreground/80 font-mono">
+                              {p.age}세
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right flex flex-col items-end">
+                          <span className="text-xs font-mono font-black text-cyan-400 drop-shadow-[0_0_2px_rgba(34,211,238,0.5)]">OVR {currentOverall}</span>
+                          <div className="flex gap-1 text-[8px] text-muted-foreground font-mono mt-0.5">
+                            <span>L <strong className="text-foreground/80">{p.lanePhase}</strong></span>
+                            <span>M <strong className="text-foreground/80">{p.mechanics}</strong></span>
+                            <span>O <strong className="text-foreground/80">{p.macro}</strong></span>
+                            <span>T <strong className="text-foreground/80">{p.teamfight}</strong></span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Contract and release actions */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => startNegotiation(p, true)}
-                          className="py-1.5 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-400/20 text-[10px] font-bold rounded-lg cursor-pointer transition-all border border-cyan-400/30 font-mono active:scale-95 shadow-[inset_0_0_8px_rgba(34,211,238,0.1)] hover:shadow-[0_0_10px_rgba(34,211,238,0.2)]"
-                        >
-                          📋 계약 재협상
-                        </button>
+                      {/* Financial details */}
+                      <div className="text-[9px] font-mono text-muted-foreground flex justify-between bg-background/40 px-2 py-1 rounded border border-border/60 leading-none select-none shadow-inner shadow-black/20">
+                        <span>급료 청구액: <strong className="text-foreground">{p.salary}만원</strong></span>
+                        <span>남은 기간: <strong className="text-destructive drop-shadow-sm">{p.contractYears}년</strong></span>
+                      </div>
 
-                        <button
-                          onClick={() => {
-                            const result = sellPlayer(p.id);
-                            if (result.success) {
-                              showToast(result.message, 'success');
-                            } else {
-                              showToast(result.message, 'error');
-                            }
-                          }}
-                          className="py-1.5 bg-destructive/10 text-destructive hover:bg-destructive/20 text-[10px] font-bold rounded-lg cursor-pointer transition-all border border-destructive/30 font-mono active:scale-95 shadow-[inset_0_0_8px_rgba(var(--destructive),0.1)] hover:shadow-[0_0_10px_rgba(var(--destructive),0.2)]"
-                        >
-                          💸 이적시장 방출
-                        </button>
+                      {/* Management and interactive buttons */}
+                      <div className="space-y-1.5 pt-1.5 border-t border-border/60">
+                        
+                        {/* Starter designation selector line */}
+                        <div className="bg-background p-1 rounded-lg border border-border flex items-center justify-between gap-1 shadow-inner shadow-black/30">
+                          <span className="text-[8px] font-mono font-extrabold text-muted-foreground pl-1 select-none">포지션 변경:</span>
+                          <div className="flex gap-0.5">
+                            {(['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'] as const).map((role) => (
+                              <button
+                                key={role}
+                                onClick={() => {
+                                  updateStartingLineup(role, p.id);
+                                  showToast(`${p.summonerName} 선수를 ${role} 선발로 명명했습니다.`, 'success');
+                                }}
+                                className={`text-[8.5px] font-mono font-black py-0.5 px-1.5 rounded cursor-pointer transition-all ${
+                                  assignedRole === role
+                                    ? 'bg-primary text-primary-foreground font-black shadow-[0_0_10px_rgba(var(--primary),0.5)]'
+                                    : 'bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent'
+                                }`}
+                              >
+                                {role[0]}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Contract and release actions */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => startNegotiation(p, true)}
+                            className="py-1.5 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-400/20 text-[10px] font-bold rounded-lg cursor-pointer transition-all border border-cyan-400/30 font-mono active:scale-95 shadow-[inset_0_0_8px_rgba(34,211,238,0.1)] hover:shadow-[0_0_10px_rgba(34,211,238,0.2)]"
+                          >
+                            📋 계약 재협상
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              const result = sellPlayer(p.id);
+                              if (result.success) {
+                                showToast(result.message, 'success');
+                              } else {
+                                showToast(result.message, 'error');
+                              }
+                            }}
+                            className="py-1.5 bg-destructive/10 text-destructive hover:bg-destructive/20 text-[10px] font-bold rounded-lg cursor-pointer transition-all border border-destructive/30 font-mono active:scale-95 shadow-[inset_0_0_8px_rgba(var(--destructive),0.1)] hover:shadow-[0_0_10px_rgba(var(--destructive),0.2)]"
+                          >
+                            💸 이적시장 방출
+                          </button>
+                        </div>
+
                       </div>
 
                     </div>
+                  );
+                })
+              )}
+            </div>
 
-                  </div>
-                );
-              })
-            )}
           </div>
-
-        </div>
+        )}
 
       </div>
 
@@ -660,54 +791,54 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
         const isProjectCapExceeded = projectPayrollAfter > 500000;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className="bg-background border border-border w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex flex-col font-mono text-foreground relative before:absolute before:inset-0 before:pointer-events-none before:shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+            <div className="bg-background border border-border w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl flex flex-col font-mono text-foreground relative before:absolute before:inset-0 before:pointer-events-none before:shadow-[inset_0_0_30px_rgba(0,0,0,0.5)] my-auto max-h-[95vh] sm:max-h-[90vh]">
               
               {/* Modal Header */}
-              <div className="bg-muted/30 px-6 py-4 border-b border-border flex items-center justify-between select-none relative z-10">
+              <div className="bg-muted/30 px-4 sm:px-6 py-3 sm:py-4 border-b border-border flex items-center justify-between select-none relative z-10 shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-xl font-bold flex items-center justify-center shadow-inner shadow-black/20">
-                    <UserCheck size={20} className="animate-pulse text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]" />
+                  <div className="p-2 sm:p-2.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-xl font-bold flex items-center justify-center shadow-inner shadow-black/20 shrink-0">
+                    <UserCheck size={18} className="animate-pulse text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]" />
                   </div>
                   <div>
                     <h2 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5 drop-shadow-sm">
                       {negIsRenewal ? '📋 소속 선수 재계약 합의' : '🤝 신규 외부선수 영입 계약협상'}
                     </h2>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[9px] sm:text-[10px] text-muted-foreground">
                       연봉 총액 샐러리 캡(50억 원) 및 구단 예산을 확인하여 최적의 대우 조건에 타결하십시오.
                     </p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setNegotiatingPlayer(null)} 
-                  className="text-muted-foreground/70 hover:text-foreground transition-colors p-1 rounded-lg hover:bg-muted text-xs font-black"
+                  className="text-muted-foreground/70 hover:text-foreground transition-colors p-1 rounded-lg hover:bg-muted text-xs font-black cursor-pointer"
                 >
-                  ✕ 닫기
+                  ✕
                 </button>
               </div>
 
               {/* Player Mini-Profile Slate */}
-              <div className="bg-background px-6 py-4 border-b border-border/60 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center select-none relative z-10">
+              <div className="bg-background px-4 sm:px-6 py-3 sm:py-4 border-b border-border/60 flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 items-stretch sm:items-center select-none relative z-10 shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border shadow-inner shadow-black/40 ${getOvrColor(ovr)}`}>
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-black text-base sm:text-lg border shadow-inner shadow-black/40 shrink-0 ${getOvrColor(ovr)}`}>
                     {ovr}
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-black text-foreground drop-shadow-sm">{p.summonerName}</span>
                       <span className="text-[10px] text-muted-foreground font-normal">({p.name})</span>
-                      <span className="text-[9px] bg-background text-cyan-400 border border-cyan-500/30 font-black px-1.5 py-0.2 rounded uppercase shadow-inner shadow-black/30">
+                      <span className="text-[9px] bg-background text-cyan-400 border border-cyan-500/30 font-black px-1.5 py-0.2 rounded uppercase shadow-inner shadow-black/30 shrink-0">
                         {p.role}
                       </span>
                     </div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                    <div className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">
                       나이: {p.age}세 • 소속팀: {p.teamId === 'FA' ? '자유계약(FA)' : p.teamId} • 기존 연봉: {formatCurrency(p.salary)}
                     </div>
                   </div>
                 </div>
 
                 {/* Financial Status Tracker */}
-                <div className="text-right text-[10px] bg-background/50 p-2.5 rounded-lg border border-border min-w-[200px] shadow-inner shadow-black/20">
+                <div className="text-left sm:text-right text-[10px] bg-background/50 p-2 sm:p-2.5 rounded-lg border border-border min-w-full sm:min-w-[200px] shadow-inner shadow-black/20 font-mono">
                   <div className="flex justify-between gap-3 text-[10px] text-muted-foreground">
                     <span>구단 보유 예산:</span>
                     <strong className="text-emerald-400 drop-shadow-[0_0_2px_rgba(52,211,153,0.5)]">{(myTeam?.budget || 0).toLocaleString()}만 원</strong>
@@ -722,10 +853,10 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
               </div>
 
               {/* Interactive Negotiation Board */}
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 leading-relaxed relative z-10">
+              <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 leading-relaxed relative z-10 overflow-y-auto flex-1">
                 
                 {/* Left Column: Player Mood & Message */}
-                <div className="flex flex-col gap-4 bg-background/60 p-4 rounded-xl border border-border shadow-inner shadow-black/30">
+                <div className="flex flex-col gap-3 sm:gap-4 bg-background/60 p-3 sm:p-4 rounded-xl border border-border shadow-inner shadow-black/30">
                   <div className="flex items-center justify-between pb-2 border-b border-border/60">
                     <span className="text-[10.5px] font-bold text-muted-foreground uppercase flex items-center gap-1">
                       🗣️ 선수 피드백 (Player Sentiment)
@@ -736,7 +867,7 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                         {Array.from({ length: 5 }).map((_, i) => (
                           <div 
                             key={i} 
-                            className={`w-2.5 h-1.5 rounded-full shadow-inner shadow-black/50 ${
+                            className={`w-2 h-1.5 rounded-full shadow-inner shadow-black/50 ${
                               i < negPatience 
                                 ? negPatience <= 2 ? 'bg-amber-500' : 'bg-emerald-500' 
                                 : 'bg-muted'
@@ -748,8 +879,8 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                   </div>
 
                   {/* Character visual feedback / Portrait Emoji */}
-                  <div className="flex items-center gap-4 py-1 select-none">
-                    <div className="text-4xl bg-background p-3 h-16 w-16 border border-border shadow-inner shadow-black/30 rounded-2xl flex items-center justify-center">
+                  <div className="flex items-center gap-3 sm:gap-4 py-1 select-none">
+                    <div className="text-3xl sm:text-4xl bg-background p-2.5 sm:p-3 h-14 w-14 sm:h-16 sm:w-16 border border-border shadow-inner shadow-black/30 rounded-2xl flex items-center justify-center shrink-0 animate-bounce">
                       {negMood === 'SIGNED' ? '🤩' :
                        negMood === 'WALKED_AWAY' ? '😡' :
                        negMood === 'INSULTED' ? '🤬' :
@@ -775,14 +906,14 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                   </div>
 
                   {/* Speech bubble */}
-                  <div className="bg-muted/20 border border-border p-3 rounded-lg text-muted-foreground text-xs italic relative flex-1 shadow-inner shadow-black/20">
-                    <div className="absolute top-3 -left-1.5 w-3 h-3 bg-muted/20 border-l border-b border-border rotate-45" />
+                  <div className="bg-muted/20 border border-border p-2.5 sm:p-3 rounded-lg text-muted-foreground text-xs italic relative flex-1 shadow-inner shadow-black/20">
+                    <div className="absolute top-3 -left-1.5 w-3 h-3 bg-muted/20 border-l border-b border-border rotate-45 hidden sm:block" />
                     "{negMessage}"
                   </div>
 
                   {/* Target demand summary for debugging / hint */}
                   {negMood !== 'SIGNED' && negMood !== 'WALKED_AWAY' && (
-                    <div className="bg-background p-2.5 rounded border border-border text-[10px] text-muted-foreground space-y-1 shadow-inner shadow-black/20">
+                    <div className="bg-background p-2.5 rounded border border-border text-[9px] sm:text-[10px] text-muted-foreground space-y-1 shadow-inner shadow-black/20 font-mono">
                       <div className="flex justify-between select-none">
                         <span>요구 최소 연봉치:</span>
                         <strong className="text-foreground/80">{formatCurrency(demandSalary)} / 년</strong>
@@ -791,7 +922,7 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                         <span>인정 계약금 하한선:</span>
                         <strong className="text-foreground/80">{formatCurrency(demandBonus)} (사이닝 보너스)</strong>
                       </div>
-                      <p className="text-[9px] leading-relaxed text-muted-foreground/80 pt-1 border-t border-border/60">
+                      <p className="text-[8.5px] sm:text-[9px] leading-relaxed text-muted-foreground/80 pt-1 border-t border-border/60">
                         * 팁: 요구 계약금보다 대단한 보너스(사이닝)를 꽂아주면 선수가 흥미를 느껴 연봉 요구액을 약간 깎아주기도 합니다.
                       </p>
                     </div>
@@ -799,14 +930,14 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                 </div>
 
                 {/* Right Column: Offer Editor */}
-                <div className="space-y-4">
-                  <h4 className="text-[10.5px] font-bold text-muted-foreground uppercase pb-2 border-b border-border/60">
+                <div className="space-y-3 sm:space-y-4">
+                  <h4 className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground uppercase pb-2 border-b border-border/60">
                     💼 구단 연봉 제안 정보 (Offer parameters)
                   </h4>
 
                   {/* Contract Years Button Group */}
                   <div>
-                    <span className="text-[10px] text-muted-foreground block mb-1.5">계약 연장 기간 (Contract Years)</span>
+                    <span className="text-[10px] text-muted-foreground block mb-1.5 font-bold">계약 연장 기간 (Contract Years)</span>
                     <div className="grid grid-cols-3 gap-2">
                       {[1, 2, 3].map((years) => (
                         <button
@@ -828,7 +959,7 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
 
                   {/* Quick Auto-Match Preset */}
                   {negMood !== 'SIGNED' && negMood !== 'WALKED_AWAY' && (
-                    <div className="bg-primary/5 border border-primary/20 p-2.5 rounded-lg flex items-center justify-between select-none">
+                    <div className="bg-primary/5 border border-primary/20 p-2.5 rounded-lg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 select-none">
                       <div className="space-y-0.5">
                         <span className="text-[10px] text-primary/80 font-black block">💡 원클릭 제안 프리셋</span>
                         <span className="text-[9px] text-muted-foreground block">선수가 요구하는 최소 기준에 정확히 조율 조준합니다.</span>
@@ -839,7 +970,7 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                           setNegSalary(demandSalary);
                           setNegBonus(demandBonus);
                         }}
-                        className="px-3 py-1.5 bg-primary/20 hover:bg-primary/35 text-primary border border-primary/40 rounded-md text-[10px] font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_8px_rgba(var(--primary),0.15)]"
+                        className="px-3 py-2 sm:py-1.5 bg-primary/20 hover:bg-primary/35 text-primary border border-primary/40 rounded-md text-[10px] font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_8px_rgba(var(--primary),0.15)] text-center font-mono"
                       >
                         ⚡ 선수 요구조건 즉시 일치시킴
                       </button>
@@ -865,16 +996,16 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                           max={Math.floor(p.salary * 2.5)}
                           value={negSalary}
                           onChange={(e) => setNegSalary(Math.max(0, Number(e.target.value)))}
-                          className="w-full bg-background/80 shadow-inner border border-border/80 py-1.5 pl-3 pr-10 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-primary/50 text-foreground"
+                          className="w-full bg-background/80 shadow-inner border border-border/80 py-2 sm:py-1.5 pl-3 pr-10 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-primary/50 text-foreground"
                           placeholder="연봉 입력"
                         />
-                        <span className="absolute right-3 top-2 text-[9px] text-muted-foreground font-bold">만 원</span>
+                        <span className="absolute right-3 top-2.5 sm:top-2 text-[9px] text-muted-foreground font-bold font-sans">만 원</span>
                       </div>
                       <button
                         type="button"
                         disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
                         onClick={() => setNegSalary(demandSalary)}
-                        className="bg-background/60 shadow-sm border border-border hover:bg-muted/50 px-2 h-[30px] rounded-lg text-[9px] font-bold text-muted-foreground hover:text-foreground shrink-0 transition-colors"
+                        className="bg-background/60 shadow-sm border border-border hover:bg-muted/50 px-2 h-[34px] sm:h-[30px] rounded-lg text-[9px] font-bold text-muted-foreground hover:text-foreground shrink-0 transition-colors cursor-pointer"
                         title="요구치 자동 적용"
                       >
                         요구치 적용
@@ -894,7 +1025,7 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                           type="button"
                           disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
                           onClick={() => setNegSalary(Math.max(1000, negSalary + item.val))}
-                          className="bg-background shadow-inner shadow-black/30 hover:bg-muted/50 border border-border py-1 px-0.5 rounded text-[9px] text-muted-foreground hover:text-foreground font-black transition-all font-sans"
+                          className="bg-background shadow-inner shadow-black/30 hover:bg-muted/50 border border-border py-1 px-0.5 rounded text-[9px] text-muted-foreground hover:text-foreground font-black transition-all font-sans cursor-pointer"
                         >
                           {item.label}
                         </button>
@@ -906,7 +1037,7 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                   <div className="bg-background/40 p-3 rounded-lg border border-border/80">
                     <div className="flex justify-between items-center text-[10px] text-muted-foreground mb-2 leading-none select-none">
                       <span className="font-bold flex items-center gap-1">✨ 사이닝 보너스 (signing Bonus)</span>
-                      <strong className="text-emerald-400 text-xs drop-shadow-[0_0_2px_rgba(52,211,153,0.5)] font-black">
+                      <strong className="text-emerald-400 text-xs drop-shadow-[0_0_2px_rgba(52,211,153,0.5)] font-black font-mono">
                         {formatCurrency(negBonus)}
                       </strong>
                     </div>
@@ -921,16 +1052,16 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                           max={Math.floor((myTeam?.budget || 100000) * 0.95)}
                           value={negBonus}
                           onChange={(e) => setNegBonus(Math.max(0, Number(e.target.value)))}
-                          className="w-full bg-background/80 shadow-inner border border-border/80 py-1.5 pl-3 pr-10 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-emerald-500/50 text-foreground"
+                          className="w-full bg-background/80 shadow-inner border border-border/80 py-2 sm:py-1.5 pl-3 pr-10 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-emerald-500/50 text-foreground"
                           placeholder="계약 보너스 입력"
                         />
-                        <span className="absolute right-3 top-2 text-[9px] text-muted-foreground font-bold">만 원</span>
+                        <span className="absolute right-3 top-2.5 sm:top-2 text-[9px] text-muted-foreground font-bold font-sans">만 원</span>
                       </div>
                       <button
                         type="button"
                         disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
                         onClick={() => setNegBonus(demandBonus)}
-                        className="bg-background/60 shadow-sm border border-border hover:bg-muted/50 px-2 h-[30px] rounded-lg text-[9px] font-bold text-muted-foreground hover:text-foreground shrink-0 transition-colors"
+                        className="bg-background/60 shadow-sm border border-border hover:bg-muted/50 px-2 h-[34px] sm:h-[30px] rounded-lg text-[9px] font-bold text-muted-foreground hover:text-foreground shrink-0 transition-colors cursor-pointer"
                         title="요구치 자동 적용"
                       >
                         요구치 적용
@@ -956,7 +1087,7 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                               setNegBonus(Math.max(0, Math.min((myTeam?.budget || 100000), negBonus + item.val)));
                             }
                           }}
-                          className="bg-background shadow-inner shadow-black/30 hover:bg-muted/50 border border-border py-1 px-0.5 rounded text-[9px] text-muted-foreground hover:text-foreground font-black transition-all font-sans"
+                          className="bg-background shadow-inner shadow-black/30 hover:bg-muted/50 border border-border py-1 px-0.5 rounded text-[9px] text-muted-foreground hover:text-foreground font-black transition-all font-sans cursor-pointer"
                         >
                           {item.label}
                         </button>
@@ -966,7 +1097,7 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
 
                   {/* Buyout summary details */}
                   {buyoutFee > 0 && (
-                    <div className="bg-background shadow-inner shadow-black/20 border border-border p-2.5 rounded-lg text-[9px] text-muted-foreground leading-relaxed">
+                    <div className="bg-background shadow-inner shadow-black/20 border border-border p-2.5 rounded-lg text-[9px] text-muted-foreground leading-relaxed font-mono">
                       구단 소속 이적 보상료: <strong className="text-foreground/80">{formatCurrency(buyoutFee)}</strong>이 추가 청구되어 소속 구단 금고로 타행 송금됩니다.
                     </div>
                   )}
@@ -976,53 +1107,53 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
               </div>
 
               {/* Action buttons footer */}
-              <div className="bg-muted/30 px-6 py-4 border-t border-border flex flex-wrap gap-3 items-center justify-between relative z-10">
-                <div>
+              <div className="bg-muted/30 px-4 sm:px-6 py-3 sm:py-4 border-t border-border flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between relative z-10 shrink-0">
+                <div className="text-center sm:text-left">
                   {negMood === 'SIGNED' ? (
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase flex items-center gap-1 drop-shadow-sm">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase flex items-center justify-center sm:justify-start gap-1 drop-shadow-sm font-sans">
                       ✓ 협상 합의 완료!
                     </span>
                   ) : negMood === 'WALKED_AWAY' ? (
-                    <span className="text-[10px] font-bold text-destructive uppercase flex items-center gap-1 animate-pulse drop-shadow-sm">
+                    <span className="text-[10px] font-bold text-destructive uppercase flex items-center justify-center sm:justify-start gap-1 animate-pulse drop-shadow-sm font-sans">
                       ✗ 선수가 이적 회담장 밖으로 이탈함
                     </span>
                   ) : (
-                    <span className="text-[10px] text-muted-foreground uppercase">
+                    <span className="text-[10px] text-muted-foreground uppercase font-mono">
                       계상 소모 예산: <strong className="text-foreground">{(negBonus + buyoutFee).toLocaleString()}만 원</strong>
                     </span>
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   {negMood === 'SIGNED' ? (
                     <button
                       onClick={confirmNegotiationSuccess}
-                      className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-emerald-950 shadow-[0_0_15px_rgba(52,211,153,0.4)] rounded-xl text-xs font-black cursor-pointer transition-all flex items-center gap-1 shrink-0"
+                      className="px-5 py-3 sm:py-2.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-emerald-950 shadow-[0_0_15px_rgba(52,211,153,0.4)] rounded-xl text-xs font-black cursor-pointer transition-all flex items-center justify-center gap-1 shrink-0 w-full sm:w-auto"
                     >
                       🖋️ 구단 직인 최종 서명 (Sign Contract)
                     </button>
                   ) : negMood === 'WALKED_AWAY' ? (
                     <button
                       onClick={() => setNegotiatingPlayer(null)}
-                      className="px-5 py-2.5 bg-muted hover:bg-muted/80 active:bg-muted text-foreground rounded-xl text-xs font-bold cursor-pointer transition-all shadow-inner shadow-black/20"
+                      className="px-5 py-3 sm:py-2.5 bg-muted hover:bg-muted/80 active:bg-muted text-foreground rounded-xl text-xs font-bold cursor-pointer transition-all shadow-inner shadow-black/20 w-full sm:w-auto text-center"
                     >
                       협상 종료 및 닫기
                     </button>
                   ) : (
-                    <>
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <button
                         onClick={() => setNegotiatingPlayer(null)}
-                        className="px-4 py-2.5 bg-background shadow-inner shadow-black/20 hover:bg-muted/50 border border-border text-muted-foreground hover:text-foreground text-xs font-black rounded-xl cursor-pointer transition-colors"
+                        className="flex-1 sm:flex-none px-4 py-3 sm:py-2.5 bg-background shadow-inner shadow-black/20 hover:bg-muted/50 border border-border text-muted-foreground hover:text-foreground text-xs font-black rounded-xl cursor-pointer transition-colors text-center"
                       >
                         철회 (Withdraw)
                       </button>
                       <button
                         onClick={submitOffer}
-                        className="px-5 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.4)] rounded-xl text-xs font-black cursor-pointer transition-all flex items-center gap-1"
+                        className="flex-1 sm:flex-none px-5 py-3 sm:py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.4)] rounded-xl text-xs font-black cursor-pointer transition-all flex items-center justify-center gap-1 text-center"
                       >
-                        📬 정식 제안서 제출 (Submit Offer)
+                        📬 제안서 제출
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>

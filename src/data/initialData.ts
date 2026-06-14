@@ -80,9 +80,9 @@ export const CHAMPIONS: Champion[] = [
   { id: 'sion', name: '사이온 (Sion)', tier: 3, lane: ['TOP'], counterIds: ['gwen', 'jax'], synergyIds: ['orianna', 'hwei'], scaling: 'LATE', style: 'TEAMFIGHT' },
   { id: 'urgot', name: '우르곳 (Urgot)', tier: 3, lane: ['TOP'], counterIds: ['aatrox', 'ksante'], synergyIds: ['sejuani', 'vi'], scaling: 'MID', style: 'TEAMFIGHT' },
   { id: 'volibear', name: '볼리베어 (Volibear)', tier: 2, lane: ['TOP', 'JUNGLE'], counterIds: ['jax', 'renekton'], synergyIds: ['sejuani', 'vi'], scaling: 'EARLY', style: 'ENGAGE' },
-  { id: 'udyr', name: '우디르 (Udir)', tier: 2, lane: ['TOP', 'JUNGLE'], counterIds: ['ksante', 'aatrox'], synergyIds: ['orianna', 'hwei'], scaling: 'MID', style: 'BALANCED' },
+  { id: 'udyr', name: '우디르 (Udir)', tier: 2, lane: ['TOP', 'JUNGLE'], counterIds: ['ksante', 'aatrox'], synergyIds: ['orianna', 'hwei'], scaling: 'MID', style: 'ENGAGE' },
   { id: 'shen', name: '쉔 (Shen)', tier: 3, lane: ['TOP', 'SUPPORT'], counterIds: ['gwen', 'fiora'], synergyIds: ['yone', 'kaisa'], scaling: 'MID', style: 'ENGAGE' },
-  { id: 'teemo', name: '티모 (Teemo)', tier: 4, lane: ['TOP'], counterIds: ['jayce', 'renekton'], synergyIds: ['maokai', 'sejuani'], scaling: 'LATE', style: 'POKE' },
+  { id: 'teemo', name: '티모 (Teemo)', tier: 3, lane: ['TOP'], counterIds: ['jayce', 'renekton'], synergyIds: ['maokai', 'sejuani'], scaling: 'LATE', style: 'POKE' },
   { id: 'gangplank', name: '갱플랭크 (Gangplank)', tier: 2, lane: ['TOP'], counterIds: ['ksante', 'aatrox'], synergyIds: ['sejuani', 'maokai'], scaling: 'LATE', style: 'TEAMFIGHT' },
 
   // 71-80: 신규 정글 / 미드 챔피언들
@@ -105,7 +105,7 @@ export const CHAMPIONS: Champion[] = [
   { id: 'hekarim', name: '헤카림 (Hecarim)', tier: 2, lane: ['JUNGLE'], counterIds: ['sejuani', 'maokai'], synergyIds: ['orianna', 'yuumi'], scaling: 'MID', style: 'ENGAGE' },
   { id: 'fiddlesticks', name: '피들스틱 (Fiddlesticks)', tier: 3, lane: ['JUNGLE'], counterIds: ['leesin', 'vi'], synergyIds: ['orianna', 'hwei'], scaling: 'LATE', style: 'TEAMFIGHT' },
   { id: 'ivern', name: '아이번 (Ivern)', tier: 2, lane: ['JUNGLE'], counterIds: ['leesin', 'vi'], synergyIds: ['tristana', 'lucian'], scaling: 'LATE', style: 'TEAMFIGHT' },
-  { id: 'shaco', name: '샤코 (Shaco)', tier: 4, lane: ['JUNGLE'], counterIds: ['sejuani', 'maokai'], synergyIds: ['ahri', 'yone'], scaling: 'EARLY', style: 'SPLIT' },
+  { id: 'shaco', name: '샤코 (Shaco)', tier: 3, lane: ['JUNGLE'], counterIds: ['sejuani', 'maokai'], synergyIds: ['ahri', 'yone'], scaling: 'EARLY', style: 'SPLIT' },
   { id: 'zac', name: '자크 (Zac)', tier: 2, lane: ['JUNGLE', 'SUPPORT'], counterIds: ['leesin', 'vi'], synergyIds: ['orianna', 'yasuo'], scaling: 'LATE', style: 'ENGAGE' },
   { id: 'leblanc', name: '르블랑 (LeBlanc)', tier: 2, lane: ['MID'], counterIds: ['azir', 'orianna'], synergyIds: ['leesin', 'vi'], scaling: 'EARLY', style: 'POKE' },
 
@@ -154,7 +154,7 @@ export const CHAMPIONS: Champion[] = [
   // 2025/2026년 롤 신규 챔피언 5종 추가
   { id: 'ambessa', name: '암베사 (Ambessa)', tier: 1, lane: ['TOP', 'JUNGLE'], counterIds: ['ksante', 'jax'], synergyIds: ['sejuani', 'vi'], scaling: 'MID', style: 'ENGAGE' },
   { id: 'mel', name: '멜 (Mel)', tier: 1, lane: ['MID', 'SUPPORT'], counterIds: ['yone', 'azir'], synergyIds: ['orianna', 'hwei'], scaling: 'LATE', style: 'TEAMFIGHT' },
-  { id: 'yunara', name: '유나라 (Yunara)', tier: 1, lane: ['ADC'], counterIds: ['ashe', 'ezreal'], synergyIds: ['lulu', 'braum'], scaling: 'LATE', style: 'BALANCED' },
+  { id: 'yunara', name: '유나라 (Yunara)', tier: 1, lane: ['ADC'], counterIds: ['ashe', 'ezreal'], synergyIds: ['lulu', 'braum'], scaling: 'LATE', style: 'TEAMFIGHT' },
   { id: 'zaahen', name: '자헨 (Zaahen)', tier: 1, lane: ['SUPPORT'], counterIds: ['nautilus', 'alistar'], synergyIds: ['samira', 'kaisa'], scaling: 'MID', style: 'ENGAGE' },
   { id: 'locke', name: '록 (Locke)', tier: 1, lane: ['MID', 'JUNGLE'], counterIds: ['azir', 'ahri'], synergyIds: ['sejuani', 'vi'], scaling: 'LATE', style: 'SPLIT' }
 ];

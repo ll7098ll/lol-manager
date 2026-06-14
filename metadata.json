@@ -1,0 +1,8 @@
+{
+  "name": "LoL Manager",
+  "description": "리그 오브 레전드 e스포츠 감독 시뮬레이션 게임. 최적의 로스터 관리, 전략적 밴픽, 정교한 경기 시뮬레이션을 통해 리그 우승에 도전해보세요.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

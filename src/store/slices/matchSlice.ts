@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { GameStore } from '../types';
 import { Standing, Match, Player, Email } from '../../types';
-import { simulateLoLMatch, simulateLoLSeries } from '../../utils/matchEngine';
+import { simulateLoLMatch, simulateLoLSeries, generateAITactics } from '../../utils/matchEngine';
 import { ALL_TEAMS, buildAIRosterMap } from '../storeUtils';
 import { formatCurrency } from '../../utils/format';
 
@@ -500,8 +500,8 @@ export const createMatchSlice: StateCreator<
     const homeRoster = buildAIRosterMap(matchToSim!.homeTeamId, homeTeamPlayers, get().playerTeamId, get().startingLineup);
     const awayRoster = buildAIRosterMap(matchToSim!.awayTeamId, awayTeamPlayers, get().playerTeamId, get().startingLineup);
 
-    const homeTactics = matchToSim!.homeTeamId === get().playerTeamId ? get().tactics : undefined;
-    const awayTactics = matchToSim!.awayTeamId === get().playerTeamId ? get().tactics : undefined;
+    const homeTactics = matchToSim!.homeTeamId === get().playerTeamId ? get().tactics : generateAITactics(homeRoster);
+    const awayTactics = matchToSim!.awayTeamId === get().playerTeamId ? get().tactics : generateAITactics(awayRoster);
     
     const hCoachId = get().activeStaff.TACTICAL_COACH;
     const hCoach = get().coachingStaff.find(s => s.id === hCoachId);
@@ -613,8 +613,8 @@ export const createMatchSlice: StateCreator<
       const homeRoster = buildAIRosterMap(activeMatch.homeTeamId, hPlayers, playerTeamId, startingLineup);
       const awayRoster = buildAIRosterMap(activeMatch.awayTeamId, aPlayers, playerTeamId, startingLineup);
 
-      const homeTactics = activeMatch.homeTeamId === playerTeamId ? get().tactics : undefined;
-      const awayTactics = activeMatch.awayTeamId === playerTeamId ? get().tactics : undefined;
+      const homeTactics = activeMatch.homeTeamId === playerTeamId ? get().tactics : generateAITactics(homeRoster);
+      const awayTactics = activeMatch.awayTeamId === playerTeamId ? get().tactics : generateAITactics(awayRoster);
       
       const hCoachId = get().activeStaff.TACTICAL_COACH;
       const hCoach = get().coachingStaff.find(s => s.id === hCoachId);
@@ -684,7 +684,9 @@ export const createMatchSlice: StateCreator<
 
         const hRoster = buildAIRosterMap(bgMatch.homeTeamId, hPlayers, playerTeamId, startingLineup);
         const aRoster = buildAIRosterMap(bgMatch.awayTeamId, aPlayers, playerTeamId, startingLineup);
-        const simResult = simulateLoLMatch(hTeam, hRoster, aTeam, aRoster);
+        const hTactics = generateAITactics(hRoster);
+        const aTactics = generateAITactics(aRoster);
+        const simResult = simulateLoLMatch(hTeam, hRoster, aTeam, aRoster, hTactics, aTactics);
 
         const matchIdx = finalSchedule.findIndex(s => s.id === bgMatch.id);
         if (matchIdx !== -1) {
