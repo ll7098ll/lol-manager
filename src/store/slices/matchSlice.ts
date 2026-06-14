@@ -5,6 +5,61 @@ import { simulateLoLMatch, simulateLoLSeries, generateAITactics } from '../../ut
 import { ALL_TEAMS, buildAIRosterMap } from '../storeUtils';
 import { formatCurrency } from '../../utils/format';
 
+const updateStandingsWithSeriesResult = (
+  standings: Standing[],
+  homeTeamId: string,
+  awayTeamId: string,
+  homeScore: number,
+  awayScore: number
+): Standing[] => {
+  const isHomeWinner = homeScore > awayScore;
+  const gameDiffVal = homeScore - awayScore;
+
+  return standings.map(st => {
+    if (st.teamId === homeTeamId) {
+      return {
+        ...st,
+        wins: isHomeWinner ? st.wins + 1 : st.wins,
+        losses: isHomeWinner ? st.losses : st.losses + 1,
+        gameDiff: st.gameDiff + gameDiffVal
+      };
+    }
+    if (st.teamId === awayTeamId) {
+      return {
+        ...st,
+        wins: isHomeWinner ? st.wins : st.wins + 1,
+        losses: isHomeWinner ? st.losses + 1 : st.losses,
+        gameDiff: st.gameDiff - gameDiffVal
+      };
+    }
+    return st;
+  });
+};
+
+const getTeamStreak = (teamId: string, currentSchedule: Match[]) => {
+  const playedMatches = currentSchedule
+    .filter(m => m.played && (m.homeTeamId === teamId || m.awayTeamId === teamId))
+    .sort((a, b) => a.week - b.week);
+  
+  if (playedMatches.length === 0) return { type: 'N/A', count: 0 };
+  
+  const lastMatch = playedMatches[playedMatches.length - 1];
+  const isWin = lastMatch.winnerId === teamId;
+  const type = isWin ? 'W' : 'L';
+  let count = 1;
+  
+  for (let i = playedMatches.length - 2; i >= 0; i--) {
+    const match = playedMatches[i];
+    const matchWin = match.winnerId === teamId;
+    if ((type === 'W' && matchWin) || (type === 'L' && !matchWin)) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  return { type, count };
+};
+
 export const createMatchSlice: StateCreator<
   GameStore,
   [],
@@ -19,6 +74,9 @@ export const createMatchSlice: StateCreator<
     | 'updateMsiBracketTree'
     | 'updateWorldsBracketTree'
     | 'completeMatch'
+    | 'completeSetMatch'
+    | 'finishSeries'
+    | 'simulateRemainingTournament'
     | 'resetToOffice'
   >
 > = (set, get) => ({
@@ -769,29 +827,7 @@ export const createMatchSlice: StateCreator<
       });
     }
 
-    const getTeamStreak = (teamId: string, currentSchedule: Match[]) => {
-      const playedMatches = currentSchedule
-        .filter(m => m.played && (m.homeTeamId === teamId || m.awayTeamId === teamId))
-        .sort((a, b) => a.week - b.week);
-      
-      if (playedMatches.length === 0) return { type: 'N/A', count: 0 };
-      
-      const lastMatch = playedMatches[playedMatches.length - 1];
-      const isWin = lastMatch.winnerId === teamId;
-      const type = isWin ? 'W' : 'L';
-      let count = 1;
-      
-      for (let i = playedMatches.length - 2; i >= 0; i--) {
-        const match = playedMatches[i];
-        const matchWin = match.winnerId === teamId;
-        if ((type === 'W' && matchWin) || (type === 'L' && !matchWin)) {
-          count++;
-        } else {
-          break;
-        }
-      }
-      return { type, count };
-    };
+    // getTeamStreak is now defined at the top-level file scope
 
     const nextTeams = get().teams.map(t => {
       let matchPrize = 0;
@@ -1061,5 +1097,444 @@ export const createMatchSlice: StateCreator<
     } else {
       set({ gameState: 'OFFICE', activeMatch: null, draftState: null, matchSimulationResult: null });
     }
+  },
+
+  completeSetMatch: (setResult) => {
+    const { seriesState, draftState, activeMatch } = get();
+    if (!seriesState || !draftState || !activeMatch) return;
+
+    const isHomeWinner = setResult.winnerId === activeMatch.homeTeamId;
+    const nextHomeWins = isHomeWinner ? seriesState.homeWins + 1 : seriesState.homeWins;
+    const nextAwayWins = isHomeWinner ? seriesState.awayWins : seriesState.awayWins + 1;
+
+    const setChamps = [...draftState.bluePicks, ...draftState.redPicks];
+    const nextFearless = [...seriesState.fearlessPickedChampions, ...setChamps];
+
+    const updatedSeriesState = {
+      ...seriesState,
+      currentSet: seriesState.currentSet + 1,
+      homeWins: nextHomeWins,
+      awayWins: nextAwayWins,
+      playedSets: [...seriesState.playedSets, setResult],
+      fearlessPickedChampions: nextFearless
+    };
+
+    set({
+      seriesState: updatedSeriesState,
+      matchSimulationResult: setResult,
+      lastMatchResult: setResult,
+      gameState: 'MATCH'
+    });
+  },
+
+  finishSeries: () => {
+    const { seriesState, activeMatch, playerTeamId, schedule, standings, teams, players, startingLineup, currentWeek, seasonPhase, playoffsMatches, msiMatches, worldsMatches } = get();
+    if (!seriesState || !activeMatch) return;
+
+    const homeScore = seriesState.homeWins;
+    const awayScore = seriesState.awayWins;
+    const seriesWinnerId = homeScore > awayScore ? activeMatch.homeTeamId : activeMatch.awayTeamId;
+
+    const aggregatedLog: string[] = [];
+    const winnerName = ALL_TEAMS.find(t => t.id === seriesWinnerId)?.name || 'unknown';
+    aggregatedLog.push(`[시리즈 최종 결산] 시리즈 스코어 ${homeScore}:${awayScore}로 ${winnerName} 팀이 다전제 최종 매치 승리를 차지합니다!`);
+    
+    seriesState.playedSets.forEach((setRes, index) => {
+      aggregatedLog.push(`\n--- ⚔️ 제 ${index + 1}세트 결과 ⚔️ ---`);
+      setRes.log.filter((line: string) => 
+        line.includes('[경기 시작]') || 
+        line.includes('[경기 종료]') || 
+        line.includes('[🚨 제압 킬]') || 
+        line.includes('[에이스 대승!]') || 
+        line.includes('[바론 대치]') || 
+        line.includes('[드래곤 스틸!]')
+      ).forEach((line: string) => {
+        aggregatedLog.push(`[SET ${index + 1}] ${line}`);
+      });
+    });
+
+    const homeStatsMap: Record<string, any> = {};
+    const awayStatsMap: Record<string, any> = {};
+    const totalSets = seriesState.playedSets.length;
+
+    seriesState.playedSets.forEach(setRes => {
+      setRes.homeStats.forEach((s: any) => {
+        if (!homeStatsMap[s.role]) homeStatsMap[s.role] = { ...s, kills: 0, deaths: 0, assists: 0, cs: 0, gold: 0, visionScore: 0, damageDealt: 0 };
+        homeStatsMap[s.role].kills += s.kills;
+        homeStatsMap[s.role].deaths += s.deaths;
+        homeStatsMap[s.role].assists += s.assists;
+        homeStatsMap[s.role].cs += s.cs;
+        homeStatsMap[s.role].gold += s.gold;
+        homeStatsMap[s.role].visionScore += s.visionScore;
+        homeStatsMap[s.role].damageDealt += s.damageDealt || 0;
+      });
+      setRes.awayStats.forEach((s: any) => {
+        if (!awayStatsMap[s.role]) awayStatsMap[s.role] = { ...s, kills: 0, deaths: 0, assists: 0, cs: 0, gold: 0, visionScore: 0, damageDealt: 0 };
+        awayStatsMap[s.role].kills += s.kills;
+        awayStatsMap[s.role].deaths += s.deaths;
+        awayStatsMap[s.role].assists += s.assists;
+        awayStatsMap[s.role].cs += s.cs;
+        awayStatsMap[s.role].gold += s.gold;
+        awayStatsMap[s.role].visionScore += s.visionScore;
+        awayStatsMap[s.role].damageDealt += s.damageDealt || 0;
+      });
+    });
+
+    Object.keys(homeStatsMap).forEach(role => {
+      homeStatsMap[role].dpm = Math.round(homeStatsMap[role].damageDealt / (32 * totalSets));
+      homeStatsMap[role].gold = Math.round(homeStatsMap[role].gold / totalSets);
+      homeStatsMap[role].cs = Math.round(homeStatsMap[role].cs / totalSets);
+    });
+    Object.keys(awayStatsMap).forEach(role => {
+      awayStatsMap[role].dpm = Math.round(awayStatsMap[role].damageDealt / (32 * totalSets));
+      awayStatsMap[role].gold = Math.round(awayStatsMap[role].gold / totalSets);
+      awayStatsMap[role].cs = Math.round(awayStatsMap[role].cs / totalSets);
+    });
+
+    const finalResult = {
+      homeTeamId: activeMatch.homeTeamId,
+      awayTeamId: activeMatch.awayTeamId,
+      winnerId: seriesWinnerId,
+      score: { home: homeScore, away: awayScore },
+      log: aggregatedLog,
+      goldDiffHistory: seriesState.playedSets[totalSets - 1]?.goldDiffHistory || [0],
+      killHistory: seriesState.playedSets[totalSets - 1]?.killHistory || [{ home: 0, away: 0 }],
+      pogPlayerId: seriesState.playedSets[totalSets - 1]?.pogPlayerId || activeMatch.homeTeamId,
+      homeStats: Object.values(homeStatsMap),
+      awayStats: Object.values(awayStatsMap)
+    };
+
+    const myStarterIds = Object.values(startingLineup);
+    const oppTeamId = activeMatch.homeTeamId === playerTeamId ? activeMatch.awayTeamId : activeMatch.homeTeamId;
+    const oppPlayers = players.filter(p => p.teamId === oppTeamId);
+    const opponentRoles: ('TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT')[] = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
+    const oppStarterIds = opponentRoles.map(r => {
+      const p = oppPlayers.find(pl => pl.role === r);
+      return p ? p.id : '';
+    }).filter(id => id !== '');
+
+    const activeStartersIds = new Set([...myStarterIds, ...oppStarterIds]);
+    const nextPlayers = players.map(p => {
+      if (activeStartersIds.has(p.id)) {
+        const curE = p.energy !== undefined ? p.energy : 100;
+        const fatigue = 20 + (totalSets > 3 ? (totalSets - 3) * 5 : 0);
+        return {
+          ...p,
+          energy: Math.max(0, curE - fatigue)
+        };
+      }
+      return p;
+    });
+
+    const isRegular = seasonPhase === 'SPRING_REGULAR' || seasonPhase === 'SUMMER_REGULAR';
+    const updatedMatch: Match = {
+      ...activeMatch,
+      played: true,
+      winnerId: seriesWinnerId,
+      score: { home: homeScore, away: awayScore },
+      log: aggregatedLog,
+      pogPlayerId: finalResult.pogPlayerId,
+      homeStats: finalResult.homeStats,
+      awayStats: finalResult.awayStats
+    };
+
+    let finalSchedule = [...schedule];
+    let finalStandings = [...standings];
+    let nextPlayoffs = [...playoffsMatches];
+    let nextMsi = [...msiMatches];
+    let nextWorlds = [...worldsMatches];
+
+    if (isRegular) {
+      finalSchedule = schedule.map(match => match.id === activeMatch.id ? updatedMatch : match);
+      finalStandings = updateStandingsWithSeriesResult(standings, activeMatch.homeTeamId, activeMatch.awayTeamId, homeScore, awayScore);
+
+      const currentWeekMatches = schedule.filter(m => m.week === currentWeek && m.id !== activeMatch.id && !m.played);
+      currentWeekMatches.forEach(bgMatch => {
+        const hTeam = get().teams.find(t => t.id === bgMatch.homeTeamId)!;
+        const aTeam = get().teams.find(t => t.id === bgMatch.awayTeamId)!;
+        const hPlayers = get().players.filter(p => p.teamId === bgMatch.homeTeamId);
+        const aPlayers = get().players.filter(p => p.teamId === bgMatch.awayTeamId);
+
+        const hRoster = buildAIRosterMap(bgMatch.homeTeamId, hPlayers, playerTeamId, startingLineup);
+        const aRoster = buildAIRosterMap(bgMatch.awayTeamId, aPlayers, playerTeamId, startingLineup);
+        const hTactics = generateAITactics(hRoster);
+        const aTactics = generateAITactics(aRoster);
+        
+        const simResult = simulateLoLSeries(
+          hTeam, hRoster, aTeam, aRoster, hTactics, aTactics,
+          0, 0, false, false, true
+        );
+
+        const matchIdx = finalSchedule.findIndex(s => s.id === bgMatch.id);
+        if (matchIdx !== -1) {
+          finalSchedule[matchIdx] = {
+            ...bgMatch,
+            played: true,
+            winnerId: simResult.winnerId,
+            score: simResult.score,
+            log: simResult.log,
+            pogPlayerId: simResult.pogPlayerId,
+            homeStats: simResult.homeStats,
+            awayStats: simResult.awayStats
+          };
+        }
+
+        finalStandings = updateStandingsWithSeriesResult(finalStandings, bgMatch.homeTeamId, bgMatch.awayTeamId, simResult.score.home, simResult.score.away);
+      });
+
+      const foreignTiers: Record<string, number> = { blg: 0.85, tes: 0.70, wbg: 0.55, g2: 0.75, fnc: 0.55, tl: 0.68, c9: 0.55 };
+      Object.entries(foreignTiers).forEach(([teamId, winRate]) => {
+        const sIdx = finalStandings.findIndex(st => st.teamId === teamId);
+        if (sIdx !== -1) {
+          if (Math.random() < winRate) {
+            finalStandings[sIdx].wins++;
+            finalStandings[sIdx].gameDiff += (Math.random() > 0.6 ? 2 : 1);
+          } else {
+            finalStandings[sIdx].losses++;
+            finalStandings[sIdx].gameDiff -= (Math.random() > 0.6 ? 2 : 1);
+          }
+        }
+      });
+
+    } else {
+      if (seasonPhase === 'SPRING_PLAYOFFS' || seasonPhase === 'SUMMER_PLAYOFFS') {
+        nextPlayoffs = playoffsMatches.map(m => m.id === activeMatch.id ? updatedMatch : m);
+      } else if (seasonPhase === 'MSI') {
+        nextMsi = msiMatches.map(m => m.id === activeMatch.id ? updatedMatch : m);
+      } else if (seasonPhase === 'WORLDS') {
+        nextWorlds = worldsMatches.map(m => m.id === activeMatch.id ? updatedMatch : m);
+      }
+    }
+
+    const nextWeek = Math.min(27, currentWeek + 1);
+
+    const weeklyWinners = new Set<string>();
+    const weeklyLosers = new Set<string>();
+    const playerWon = seriesWinnerId === playerTeamId;
+
+    if (playerWon) {
+      weeklyWinners.add(playerTeamId);
+      weeklyLosers.add(oppTeamId);
+    } else {
+      weeklyWinners.add(oppTeamId);
+      weeklyLosers.add(playerTeamId);
+    }
+
+    if (isRegular) {
+      const currentWeekMatches = schedule.filter(m => m.week === currentWeek && m.id !== activeMatch.id && !m.played);
+      currentWeekMatches.forEach(bgMatch => {
+        const matchEntry = finalSchedule.find(s => s.id === bgMatch.id);
+        if (matchEntry && matchEntry.winnerId) {
+          const bgWinner = matchEntry.winnerId;
+          const bgLoser = bgMatch.homeTeamId === bgWinner ? bgMatch.awayTeamId : bgMatch.homeTeamId;
+          weeklyWinners.add(bgWinner);
+          weeklyLosers.add(bgLoser);
+        }
+      });
+    }
+
+    const nextTeams = get().teams.map(t => {
+      let matchPrize = 0;
+      let fanChange = 0;
+
+      if (weeklyWinners.has(t.id)) {
+        matchPrize = isRegular ? 20000 : 50000;
+        fanChange = isRegular ? 45000 : 120000;
+      } else if (weeklyLosers.has(t.id)) {
+        matchPrize = isRegular ? 3000 : 10000;
+        fanChange = isRegular ? -15000 : -35000;
+      }
+
+      const ticketRevenue = t.region === 'LCK' ? Math.floor(t.fans * 0.01) : 3000;
+      const teamPlayers = nextPlayers.filter(p => p.teamId === t.id);
+      const salaryExpense = teamPlayers.reduce((sum, p) => sum + Math.floor(p.salary / 24), 0);
+
+      const streak = getTeamStreak(t.id, finalSchedule);
+      let sponsorBonus = 0;
+      let sponsorPenalty = 0;
+      if (streak.type === 'W') {
+        sponsorBonus = streak.count * 1500;
+      } else if (streak.type === 'L') {
+        sponsorPenalty = streak.count * 1000;
+      }
+      const sponsorNet = sponsorBonus - sponsorPenalty;
+
+      let staffSalaryExpense = 0;
+      if (t.id === playerTeamId) {
+        const activeIds = Object.values(get().activeStaff).filter(Boolean);
+        const activeList = get().coachingStaff.filter(s => activeIds.includes(s.id));
+        staffSalaryExpense = activeList.reduce((sum, s) => sum + Math.floor(s.salary / 24), 0);
+      }
+
+      const totalSal = teamPlayers.reduce((sum, p) => sum + p.salary, 0);
+      let luxuryTax = 0;
+      if (totalSal > 450000) {
+        luxuryTax = Math.floor(((totalSal - 450000) / 24) * 1.2);
+      }
+
+      const totalOutflow = salaryExpense + staffSalaryExpense + luxuryTax;
+      const netIncome = matchPrize + ticketRevenue + sponsorNet - totalOutflow;
+      
+      return {
+        ...t,
+        budget: Math.max(0, t.budget + netIncome),
+        fans: Math.max(10000, t.fans + fanChange)
+      };
+    });
+
+    const playerTeamObj = get().teams.find(t => t.id === playerTeamId)!;
+    const pMatchPrize = playerWon ? (isRegular ? 20000 : 50000) : (isRegular ? 3000 : 10000);
+    const pTicketRevenue = Math.floor(playerTeamObj.fans * 0.01);
+    const teamPlay = nextPlayers.filter(p => p.teamId === playerTeamId);
+    const pWeeklySalaries = teamPlay.reduce((sum, p) => sum + Math.floor(p.salary / 24), 0);
+
+    const pSponsorStreak = getTeamStreak(playerTeamId, finalSchedule);
+    const pSponsorBonus = pSponsorStreak.type === 'W' ? pSponsorStreak.count * 1500 : 0;
+    const pSponsorPenalty = pSponsorStreak.type === 'L' ? pSponsorStreak.count * 1000 : 0;
+    const pSponsorNet = pSponsorBonus - pSponsorPenalty;
+
+    const pActiveIds = Object.values(get().activeStaff).filter(Boolean);
+    const pActiveList = get().coachingStaff.filter(s => pActiveIds.includes(s.id));
+    const pStaffWage = pActiveList.reduce((sum, s) => sum + Math.floor(s.salary / 24), 0);
+
+    const pTotalSal = teamPlay.reduce((sum, p) => sum + p.salary, 0);
+    let pLuxuryTax = 0;
+    if (pTotalSal > 450000) {
+      pLuxuryTax = Math.floor(((pTotalSal - 450000) / 24) * 1.2);
+    }
+
+    const pTotalOutflows = pWeeklySalaries + pStaffWage + pLuxuryTax;
+    const pNetIncome = pMatchPrize + pTicketRevenue + pSponsorNet - pTotalOutflows;
+
+    const textDate = `${get().currentDate.getFullYear()}년 ${get().currentDate.getMonth() + 1}월 ${get().currentDate.getDate()}일`;
+
+    const streakMsg = pSponsorStreak.type === 'W' 
+      ? `📈 구단 연승 스폰서 보너스: +${formatCurrency(pSponsorBonus)} (연승 지속: ${pSponsorStreak.count}W)`
+      : pSponsorStreak.type === 'L'
+        ? `📉 장기 연패 위약 메커니즘 차감: -${formatCurrency(pSponsorPenalty)} (연패 상태: ${pSponsorStreak.count}L)`
+        : `⚙️ 연승/연패 스폰서 변동액: N/A`;
+
+    const luxuryTaxMsg = pLuxuryTax > 0
+      ? `🚨 [사치세 부과] 샐러리 캡(45억) 초과분 벌금 주 정산: -${formatCurrency(pLuxuryTax)}\n`
+      : '';
+
+    const contentTemplate = `감독님! 한 주간 노고가 많으셨습니다. 프런트 오피스에서 실시간 재정 실태 및 연봉 정산 결산서를 전달합니다.\n\n[이번 주간 재정 실시간 정산 보고]\n💰 경기 참가·승리 상금: +${formatCurrency(pMatchPrize)}\n🎟️ 티켓 및 굿즈 매출: +${formatCurrency(pTicketRevenue)}\n${streakMsg}\n\n💸 선수단 주간 총 급여지출: -${formatCurrency(pWeeklySalaries)}\n🕴️ 코칭스태프 계약직 주간 급배: -${formatCurrency(pStaffWage)}\n${luxuryTaxMsg}📈 최종 순수익: ${pNetIncome < 0 ? `-${formatCurrency(Math.abs(pNetIncome))}` : `+${formatCurrency(pNetIncome)}`}\n\n성공적으로 주간 재정 정산이 집행 완료되었습니다. 다음 경기 승리를 위해 감독님의 탁월한 지도를 기대합니다!`;
+
+    const resultMail: Email = {
+      id: `mail_result_${Date.now()}`,
+      sender: '팬 연합회 및 프런트 사무국',
+      title: playerWon ? `[재정 보고] 눈부신 격전의 대형 승리 및 주간 결산 완료!` : `[재정 보고] 이번 경기 실패의 고배 극복 및 주간 결산 완료.`,
+      content: contentTemplate,
+      date: textDate,
+      read: false,
+      type: playerWon ? 'CONGRATS' as const : 'SYSTEM' as const
+    };
+
+    set({
+      gameState: 'SUMMARY',
+      matchSimulationResult: finalResult,
+      lastMatchResult: finalResult,
+      schedule: finalSchedule,
+      standings: finalStandings,
+      playoffsMatches: nextPlayoffs,
+      msiMatches: nextMsi,
+      worldsMatches: nextWorlds,
+      currentWeek: nextWeek,
+      teams: nextTeams,
+      players: nextPlayers,
+      emails: [resultMail, ...get().emails],
+      seriesState: null // clear series state
+    });
+
+    if (seasonPhase === 'SPRING_PLAYOFFS' || seasonPhase === 'SUMMER_PLAYOFFS') {
+      get().updatePlayoffsBracketTree(nextPlayoffs);
+    } else if (seasonPhase === 'MSI') {
+      get().updateMsiBracketTree(nextMsi);
+    } else if (seasonPhase === 'WORLDS') {
+      get().updateWorldsBracketTree(nextWorlds);
+    }
+  },
+
+  simulateRemainingTournament: () => {
+    const { seasonPhase, playoffsMatches, msiMatches, worldsMatches, teams, players, playerTeamId, startingLineup } = get();
+    const myRosterLineup = startingLineup;
+
+    let matchesToSim: Match[] = [];
+    if (seasonPhase === 'SPRING_PLAYOFFS' || seasonPhase === 'SUMMER_PLAYOFFS') {
+      matchesToSim = [...playoffsMatches];
+    } else if (seasonPhase === 'MSI') {
+      matchesToSim = [...msiMatches];
+    } else if (seasonPhase === 'WORLDS') {
+      matchesToSim = [...worldsMatches];
+    }
+
+    if (matchesToSim.length === 0) return;
+
+    let updatedMatches = [...matchesToSim];
+    let loopCount = 0;
+
+    while (updatedMatches.some(m => !m.played) && loopCount < 50) {
+      const nextUnplayed = updatedMatches.find(m => !m.played && m.homeTeamId !== 'TBD' && m.awayTeamId !== 'TBD');
+      
+      if (nextUnplayed) {
+        const homeT = teams.find(t => t.id === nextUnplayed.homeTeamId)!;
+        const awayT = teams.find(t => t.id === nextUnplayed.awayTeamId)!;
+        const hPlayers = players.filter(p => p.teamId === nextUnplayed.homeTeamId);
+        const aPlayers = players.filter(p => p.teamId === nextUnplayed.awayTeamId);
+
+        const hRoster = buildAIRosterMap(nextUnplayed.homeTeamId, hPlayers, playerTeamId, myRosterLineup);
+        const aRoster = buildAIRosterMap(nextUnplayed.awayTeamId, aPlayers, playerTeamId, myRosterLineup);
+        const hTactics = generateAITactics(hRoster);
+        const aTactics = generateAITactics(aRoster);
+
+        const isFinal = nextUnplayed.id.endsWith('_f') || nextUnplayed.id.includes('final');
+        const isBo3 = !isFinal && !nextUnplayed.id.includes('worlds_qf') && !nextUnplayed.id.includes('worlds_sf') && !nextUnplayed.id.includes('worlds_f');
+
+        const simResult = simulateLoLSeries(
+          homeT, hRoster, awayT, aRoster, hTactics, aTactics,
+          0, 0, false, false, isBo3
+        );
+
+        const updatedMatch: Match = {
+          ...nextUnplayed,
+          played: true,
+          winnerId: simResult.winnerId,
+          score: simResult.score,
+          log: simResult.log,
+          pogPlayerId: simResult.pogPlayerId,
+          homeStats: simResult.homeStats,
+          awayStats: simResult.awayStats
+        };
+
+        updatedMatches = updatedMatches.map(m => m.id === nextUnplayed.id ? updatedMatch : m);
+        
+        if (seasonPhase === 'SPRING_PLAYOFFS' || seasonPhase === 'SUMMER_PLAYOFFS') {
+          set({ playoffsMatches: updatedMatches });
+          get().updatePlayoffsBracketTree(updatedMatches);
+          updatedMatches = get().playoffsMatches;
+        } else if (seasonPhase === 'MSI') {
+          set({ msiMatches: updatedMatches });
+          get().updateMsiBracketTree(updatedMatches);
+          updatedMatches = get().msiMatches;
+        } else if (seasonPhase === 'WORLDS') {
+          set({ worldsMatches: updatedMatches });
+          get().updateWorldsBracketTree(updatedMatches);
+          updatedMatches = get().worldsMatches;
+        }
+      } else {
+        break;
+      }
+      loopCount++;
+    }
+
+    if (seasonPhase === 'SPRING_PLAYOFFS' || seasonPhase === 'SUMMER_PLAYOFFS') {
+      set({ playoffsMatches: updatedMatches });
+    } else if (seasonPhase === 'MSI') {
+      set({ msiMatches: updatedMatches });
+    } else if (seasonPhase === 'WORLDS') {
+      set({ worldsMatches: updatedMatches });
+    }
+
+    get().resetToOffice();
   }
 });

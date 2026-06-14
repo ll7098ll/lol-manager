@@ -1,4 +1,4 @@
-import { Player, Team, Standing, Match, Email, DraftState, GameState, SeasonPhase, Staff, Tactics } from '../types';
+import { Player, Team, Standing, Match, Email, DraftState, GameState, SeasonPhase, Staff, Tactics, SeriesState } from '../types';
 
 export interface GameStore {
   // Time and progression
@@ -36,6 +36,7 @@ export interface GameStore {
   // Draft room & match viewer states
   activeMatch: Match | null;
   draftState: DraftState | null;
+  seriesState: SeriesState | null;
   matchSimulationResult: any | null;
   lastMatchResult: any | null;
 
@@ -66,6 +67,9 @@ export interface GameStore {
   
   // Mid-simulation triggers
   completeMatch: (result: any) => void;
+  completeSetMatch: (setResult: any) => void;
+  finishSeries: () => void;
+  simulateRemainingTournament: () => void;
   resetToOffice: () => void;
   setGameState: (state: GameState) => void;
 

@@ -2,8 +2,39 @@ import { StateCreator } from 'zustand';
 import { GameStore } from '../types';
 import { DraftState } from '../../types';
 import { selectSmartDraftPick } from '../../utils/draft';
-import { simulateLoLMatch } from '../../utils/matchEngine';
+import { simulateLoLMatch, simulateLoLSeries, generateAITactics } from '../../utils/matchEngine';
 import { buildAIRosterMap } from '../storeUtils';
+
+const updateStandingsWithSeriesResult = (
+  standings: any[],
+  homeTeamId: string,
+  awayTeamId: string,
+  homeScore: number,
+  awayScore: number
+): any[] => {
+  const isHomeWinner = homeScore > awayScore;
+  const gameDiffVal = homeScore - awayScore;
+
+  return standings.map(st => {
+    if (st.teamId === homeTeamId) {
+      return {
+        ...st,
+        wins: isHomeWinner ? st.wins + 1 : st.wins,
+        losses: isHomeWinner ? st.losses : st.losses + 1,
+        gameDiff: st.gameDiff + gameDiffVal
+      };
+    }
+    if (st.teamId === awayTeamId) {
+      return {
+        ...st,
+        wins: isHomeWinner ? st.wins : st.wins + 1,
+        losses: isHomeWinner ? st.losses + 1 : st.losses,
+        gameDiff: st.gameDiff - gameDiffVal
+      };
+    }
+    return st;
+  });
+};
 
 export const createDraftSlice: StateCreator<
   GameStore,
@@ -27,8 +58,69 @@ export const createDraftSlice: StateCreator<
   lastMatchResult: null,
 
   startDraft: () => {
-    const { activeMatch, playerTeamId } = get();
+    const { activeMatch, playerTeamId, seriesState } = get();
     if (!activeMatch) return;
+
+    // Helper to determine BO series format and required wins
+    const determineBoFormatAndMaxWins = (match: any): { boFormat: 'BO1' | 'BO2' | 'BO3' | 'BO5'; maxWins: number } => {
+      const mType = match.matchType;
+      const mId = match.id;
+
+      if (match.boFormat) {
+        const maxWins = match.boFormat === 'BO5' ? 3 : match.boFormat === 'BO3' ? 2 : match.boFormat === 'BO2' ? 2 : 1;
+        return { boFormat: match.boFormat, maxWins };
+      }
+
+      // Worlds formats
+      if (mType === 'WORLDS') {
+        if (mId.includes('worlds_qf') || mId.includes('worlds_sf') || mId === 'worlds_f') {
+          return { boFormat: 'BO5', maxWins: 3 };
+        }
+        // Swiss round decider matches are BO3
+        if (mId.startsWith('worlds_swiss_r3_m1') || mId.startsWith('worlds_swiss_r3_m2') ||
+            mId.startsWith('worlds_swiss_r3_m7') || mId.startsWith('worlds_swiss_r3_m8') ||
+            mId.startsWith('worlds_swiss_r4_') ||
+            mId.startsWith('worlds_swiss_r5_')) {
+          return { boFormat: 'BO3', maxWins: 2 };
+        }
+        return { boFormat: 'BO1', maxWins: 1 };
+      }
+
+      // Playoffs formats
+      if (mType === 'SPRING_PLAYOFFS' || mType === 'SUMMER_PLAYOFFS') {
+        return { boFormat: 'BO5', maxWins: 3 };
+      }
+
+      // MSI formats
+      if (mType === 'MSI') {
+        if (mId === 'msi_f' || mId === 'msi_lbf' || mId === 'msi_ubf' || mId.startsWith('msi_ubsf') || mId.startsWith('msi_lbr2') || mId.startsWith('msi_lbr3')) {
+          return { boFormat: 'BO5', maxWins: 3 };
+        }
+        return { boFormat: 'BO3', maxWins: 2 };
+      }
+
+      // LCK Regular Season standard BO3
+      if (mType === 'SPRING_REGULAR' || mType === 'SUMMER_REGULAR') {
+        return { boFormat: 'BO3', maxWins: 2 };
+      }
+
+      return { boFormat: 'BO1', maxWins: 1 };
+    };
+
+    let nextSeriesState = seriesState;
+    if (!seriesState || seriesState.matchId !== activeMatch.id) {
+      const { boFormat, maxWins } = determineBoFormatAndMaxWins(activeMatch);
+      nextSeriesState = {
+        matchId: activeMatch.id,
+        currentSet: 1,
+        homeWins: 0,
+        awayWins: 0,
+        maxWins,
+        boFormat,
+        playedSets: [],
+        fearlessPickedChampions: []
+      };
+    }
 
     const draftState: DraftState = {
       blueTeamId: activeMatch.homeTeamId,
@@ -42,7 +134,8 @@ export const createDraftSlice: StateCreator<
 
     set({
       gameState: 'DRAFT',
-      draftState
+      draftState,
+      seriesState: nextSeriesState
     });
 
     setTimeout(() => {
@@ -116,7 +209,7 @@ export const createDraftSlice: StateCreator<
     if (gameState === 'OFFICE' && !activeMatch) {
       const currentWeekMatches = schedule.filter(m => m.week === currentWeek && !m.played);
       const updatedSchedule = [...schedule];
-      const updatedStandings = [...standings];
+      let updatedStandings = [...standings];
       
       currentWeekMatches.forEach(match => {
         const hTeam = get().teams.find(t => t.id === match.homeTeamId)!;
@@ -128,7 +221,13 @@ export const createDraftSlice: StateCreator<
         const homeRoster = buildAIRosterMap(match.homeTeamId, hPlayers, get().playerTeamId, get().startingLineup);
         const awayRoster = buildAIRosterMap(match.awayTeamId, aPlayers, get().playerTeamId, get().startingLineup);
 
-        const simResult = simulateLoLMatch(hTeam, homeRoster, aTeam, awayRoster);
+        const hTactics = generateAITactics(homeRoster);
+        const aTactics = generateAITactics(awayRoster);
+
+        const simResult = simulateLoLSeries(
+          hTeam, homeRoster, aTeam, awayRoster,
+          hTactics, aTactics, 0, 0, false, false, true
+        );
 
         const matchIdx = updatedSchedule.findIndex(s => s.id === match.id);
         if (matchIdx !== -1) {
@@ -138,27 +237,16 @@ export const createDraftSlice: StateCreator<
             winnerId: simResult.winnerId,
             score: simResult.score,
             log: simResult.log,
-            goldDiffHistory: simResult.goldDiffHistory,
-            killHistory: simResult.killHistory,
             pogPlayerId: simResult.pogPlayerId,
             homeStats: simResult.homeStats,
             awayStats: simResult.awayStats
           };
         }
 
-        const isHomeWinner = simResult.winnerId === match.homeTeamId;
-        const homeStandIdx = updatedStandings.findIndex(st => st.teamId === match.homeTeamId);
-        const awayStandIdx = updatedStandings.findIndex(st => st.teamId === match.awayTeamId);
-
-        if (homeStandIdx !== -1 && awayStandIdx !== -1) {
-          if (isHomeWinner) {
-            updatedStandings[homeStandIdx].wins++;
-            updatedStandings[awayStandIdx].losses++;
-          } else {
-            updatedStandings[awayStandIdx].wins++;
-            updatedStandings[homeStandIdx].losses++;
-          }
-        }
+        updatedStandings = updateStandingsWithSeriesResult(
+          updatedStandings, match.homeTeamId, match.awayTeamId,
+          simResult.score.home, simResult.score.away
+        );
       });
 
       const foreignTiers: Record<string, number> = { 
@@ -225,11 +313,13 @@ export const createDraftSlice: StateCreator<
 
     const isBanTurn = currentTurn.includes('BAN');
 
+    const seriesState = get().seriesState;
     const usedChamps = [
       ...draftState.blueBans,
       ...draftState.redBans,
       ...draftState.bluePicks,
-      ...draftState.redPicks
+      ...draftState.redPicks,
+      ...(seriesState?.fearlessPickedChampions || [])
     ];
 
     const aiSide = isBlueTurn ? 'BLUE' : 'RED';

@@ -42,7 +42,10 @@ export default function MatchViewer() {
     players,
     gameState,
     matchSimulationResult,
-    resetToOffice
+    resetToOffice,
+    seriesState,
+    startDraft,
+    finishSeries
   } = useGameStore();
 
   const isMobile = useIsMobile();
@@ -68,6 +71,30 @@ export default function MatchViewer() {
 
   const logLength = result.log.length;
   const totalMinutes = result.goldDiffHistory.length - 1;
+
+  // Prevent score spoiling during simulation ticking phase
+  const displayHomeWins = (() => {
+    if (!seriesState) return 0;
+    if (currentTick < totalMinutes) {
+      const isHomeSetWinner = result.winnerId === activeMatch.homeTeamId;
+      return isHomeSetWinner ? Math.max(0, seriesState.homeWins - 1) : seriesState.homeWins;
+    }
+    return seriesState.homeWins;
+  })();
+
+  const displayAwayWins = (() => {
+    if (!seriesState) return 0;
+    if (currentTick < totalMinutes) {
+      const isHomeSetWinner = result.winnerId === activeMatch.homeTeamId;
+      return isHomeSetWinner ? seriesState.awayWins : Math.max(0, seriesState.awayWins - 1);
+    }
+    return seriesState.awayWins;
+  })();
+
+  // series is only decided once the current set's simulation has finished ticking
+  const isSeriesDecided = seriesState
+    ? (currentTick >= totalMinutes && (seriesState.homeWins >= seriesState.maxWins || seriesState.awayWins >= seriesState.maxWins || (seriesState.boFormat === 'BO2' && seriesState.currentSet > 2)))
+    : true;
 
   // Speed mapping (milliseconds per mock game minute)
   const speedDelays = {
@@ -219,7 +246,9 @@ export default function MatchViewer() {
           {/* Core Central Match Clock & Big Score */}
           <div className="flex-col text-center sm:col-span-4 shrink-0 flex items-center justify-center">
             <div className="hidden sm:inline-block text-[9px] bg-background border border-border text-muted-foreground font-mono font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-inner">
-              {currentTick >= totalMinutes ? 'MATCH COMPLETE' : `SUMMONER'S RIFT : ${currentTick}분`}
+              {currentTick >= totalMinutes 
+                ? (seriesState ? `${seriesState.boFormat} SET ${seriesState.currentSet - 1} 완료` : 'MATCH COMPLETE') 
+                : `SUMMONER'S RIFT : ${currentTick}분`}
             </div>
             <div className="flex justify-center items-center gap-2 sm:gap-4 mt-0.5">
               <span className="text-lg sm:text-2xl font-black text-white font-mono drop-shadow-[0_0_5px_rgba(255,255,255,0.4)]">{currentKills.home}</span>
@@ -229,6 +258,11 @@ export default function MatchViewer() {
             <div className="inline-block sm:hidden text-[8px] text-muted-foreground font-mono mt-0.5">
               {currentTick >= totalMinutes ? '종료' : `${currentTick}분`}
             </div>
+            {seriesState && (
+              <div className="text-[10px] sm:text-xs font-black text-amber-400 mt-1 uppercase font-mono tracking-wider">
+                🏆 시리즈 스코어: {displayHomeWins} - {displayAwayWins}
+              </div>
+            )}
           </div>
 
           {/* Away team KDA / Gold */}
@@ -843,21 +877,55 @@ export default function MatchViewer() {
         <div className="bg-card/40 backdrop-blur-md border border-border p-3 sm:px-5 sm:py-3 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between shadow-[0_0_20px_rgba(0,0,0,0.5)] gap-3 shrink-0">
           <div className="flex items-center gap-2 max-w-xl text-[10px] sm:text-[11px] text-muted-foreground leading-normal font-mono text-center sm:text-left">
             <AlertCircle size={16} className="text-primary hidden md:block shrink-0" />
-            <p>
-              경기 결과 보고 완료 시 Standings 순위와 구단 지표가 갱신됩니다. 감독실 복귀 단계를 밟으십시오.
-            </p>
+            {gameState === 'SUMMARY' ? (
+              <p>
+                경기 결과 보고가 완료되어 순위 및 구단 예산 정산이 정상 처리되었습니다. 감독실로 복귀하십시오.
+              </p>
+            ) : isSeriesDecided ? (
+              <p>
+                다전제 시리즈 승부가 모두 결정되었습니다. 시리즈 최종 결산 후 감독실로 복구 집행하십시오.
+              </p>
+            ) : (
+              <p>
+                시리즈 매치가 진행 중입니다. 선수 피로도와 밴픽 전술을 교정하고 다음 세트 드래프트실로 입장하십시오.
+              </p>
+            )}
           </div>
 
           <div className="flex justify-center sm:justify-end">
-            <motion.button
-              id="btn-return-office"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={resetToOffice}
-              className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 rounded-xl font-black bg-primary hover:brightness-110 text-primary-foreground text-xs sm:text-sm shadow-[0_0_20px_rgba(var(--primary),0.4)] cursor-pointer flex items-center justify-center gap-2 transition-all font-heading"
-            >
-              정산 완료하고 감독실 복귀하기 <ChevronRight size={12} />
-            </motion.button>
+            {currentTick >= totalMinutes && (
+              gameState === 'SUMMARY' ? (
+                <motion.button
+                  id="btn-return-office"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={resetToOffice}
+                  className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 rounded-xl font-black bg-primary hover:brightness-110 text-primary-foreground text-xs sm:text-sm shadow-[0_0_20px_rgba(var(--primary),0.4)] cursor-pointer flex items-center justify-center gap-2 transition-all font-heading"
+                >
+                  정산 완료하고 감독실 복귀하기 <ChevronRight size={12} />
+                </motion.button>
+              ) : isSeriesDecided ? (
+                <motion.button
+                  id="btn-finish-series"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={finishSeries}
+                  className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 rounded-xl font-black bg-primary hover:brightness-110 text-primary-foreground text-xs sm:text-sm shadow-[0_0_20px_rgba(var(--primary),0.4)] cursor-pointer flex items-center justify-center gap-2 transition-all font-heading"
+                >
+                  시리즈 최종 정산 완료하기 <ChevronRight size={12} />
+                </motion.button>
+              ) : (
+                <motion.button
+                  id="btn-next-set-draft"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={startDraft}
+                  className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 rounded-xl font-black bg-emerald-500 hover:bg-emerald-600 hover:brightness-110 text-white text-xs sm:text-sm shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer flex items-center justify-center gap-2 transition-all font-heading"
+                >
+                  다음 세트 밴픽실로 이동하기 <ChevronRight size={12} />
+                </motion.button>
+              )
+            )}
           </div>
         </div>
       )}

@@ -64,7 +64,7 @@ export default function Dashboard() {
     seasonPhase, playoffsMatches, msiMatches, worldsMatches,
     standings, restRoster,
     trainingPoints, trainPlayerIndividual, coachingActionsLeft,
-    simulateBracketMatchDirectly, tactics, changeTactics, coachingStaff, activeStaff,
+    simulateBracketMatchDirectly, simulateRemainingTournament, tactics, changeTactics, coachingStaff, activeStaff,
     academyRookies, hireStaff, fireStaff, hireAcademyRookie, startNextSeason, proceedToNextDay, skipToMatchDay
   } = useGameStore();
 
@@ -389,6 +389,11 @@ export default function Dashboard() {
                 {officeSubTab === 'HOME' && (
                   <OfficeHomeTab
                     schedule={schedule}
+                    playoffsMatches={playoffsMatches}
+                    msiMatches={msiMatches}
+                    worldsMatches={worldsMatches}
+                    activeMatch={activeMatch}
+                    seasonPhase={seasonPhase}
                     currentWeek={currentWeek}
                     playerTeamId={playerTeamId!}
                     teams={teams}
@@ -423,6 +428,9 @@ export default function Dashboard() {
                 {officeSubTab === 'SCHEDULE' && (
                   <ScheduleTab
                     schedule={schedule}
+                    playoffsMatches={playoffsMatches}
+                    msiMatches={msiMatches}
+                    worldsMatches={worldsMatches}
                     currentWeek={currentWeek}
                     scheduleFilterWeek={scheduleFilterWeek}
                     setScheduleFilterWeek={setScheduleFilterWeek}
@@ -456,6 +464,7 @@ export default function Dashboard() {
                     getTeamName={getTeamName}
                     getTeamLogo={getTeamLogo}
                     simulateBracketMatchDirectly={simulateBracketMatchDirectly}
+                    simulateRemainingTournament={simulateRemainingTournament}
                   />
                 )}
 

@@ -442,6 +442,7 @@ export const createFinanceSlice: StateCreator<
       season: nextSeason,
       standings,
       schedule,
+      seasonPhase: 'SPRING_REGULAR',
       players: [...updatedPlayers, ...rookies],
       emails: [welcomeMail, ...retiredPlayerEmails, ...get().emails],
       currentDate: new Date(2025 + nextSeason, 0, 1),

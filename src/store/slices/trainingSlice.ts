@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { GameStore } from '../types';
 import { Match, Player, Email } from '../../types';
 import { buildAIRosterMap } from '../storeUtils';
-import { simulateLoLMatch } from '../../utils/matchEngine';
+import { simulateLoLMatch, simulateLoLSeries, generateAITactics } from '../../utils/matchEngine';
 import { formatCurrency } from '../../utils/format';
 
 export const createTrainingSlice: StateCreator<
@@ -233,8 +233,60 @@ export const createTrainingSlice: StateCreator<
           const aPlayers = newPlayers.filter(p => p.teamId === nextUnplayed.awayTeamId);
           const hRoster = buildAIRosterMap(nextUnplayed.homeTeamId, hPlayers, playerTeamId);
           const aRoster = buildAIRosterMap(nextUnplayed.awayTeamId, aPlayers, playerTeamId);
+          const mType = nextUnplayed.matchType || seasonPhase;
+          const mId = nextUnplayed.id;
+          let boFormat: 'BO1' | 'BO3' | 'BO5' = 'BO1';
 
-          const simResult = simulateLoLMatch(homeT, hRoster, awayT, aRoster);
+          if (nextUnplayed.boFormat) {
+            boFormat = nextUnplayed.boFormat;
+          } else if (mType === 'WORLDS') {
+            if (mId.includes('worlds_qf') || mId.includes('worlds_sf') || mId === 'worlds_f') {
+              boFormat = 'BO5';
+            } else if (
+              mId.startsWith('worlds_swiss_r3_m1') || mId.startsWith('worlds_swiss_r3_m2') ||
+              mId.startsWith('worlds_swiss_r3_m7') || mId.startsWith('worlds_swiss_r3_m8') ||
+              mId.startsWith('worlds_swiss_r4_') ||
+              mId.startsWith('worlds_swiss_r5_')
+            ) {
+              boFormat = 'BO3';
+            } else {
+              boFormat = 'BO1';
+            }
+          } else if (mType === 'SPRING_PLAYOFFS' || mType === 'SUMMER_PLAYOFFS') {
+            boFormat = 'BO5';
+          } else if (mType === 'MSI') {
+            if (mId === 'msi_f' || mId === 'msi_lbf' || mId === 'msi_ubf' || mId.startsWith('msi_ubsf') || mId.startsWith('msi_lbr2') || mId.startsWith('msi_lbr3')) {
+              boFormat = 'BO5';
+            } else {
+              boFormat = 'BO3';
+            }
+          } else if (mType === 'SPRING_REGULAR' || mType === 'SUMMER_REGULAR') {
+            boFormat = 'BO3';
+          }
+
+          const hTactics = generateAITactics(hRoster);
+          const aTactics = generateAITactics(aRoster);
+          
+          let simResult;
+          if (boFormat === 'BO1') {
+            const matchRes = simulateLoLMatch(homeT, hRoster, awayT, aRoster, hTactics, aTactics);
+            simResult = {
+              winnerId: matchRes.winnerId,
+              score: matchRes.winnerId === homeT.id ? { home: 1, away: 0 } : { home: 0, away: 1 },
+              log: matchRes.log,
+              goldDiffHistory: matchRes.goldDiffHistory,
+              killHistory: matchRes.killHistory,
+              pogPlayerId: matchRes.pogPlayerId,
+              homeStats: matchRes.homeStats,
+              awayStats: matchRes.awayStats
+            };
+          } else {
+            simResult = simulateLoLSeries(
+              homeT, hRoster, awayT, aRoster,
+              hTactics, aTactics, 0, 0, false, false,
+              boFormat === 'BO3'
+            );
+          }
           
           const updatedMatch: Match = {
             ...nextUnplayed,
