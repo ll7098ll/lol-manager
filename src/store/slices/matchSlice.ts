@@ -798,17 +798,17 @@ export const createMatchSlice: StateCreator<
       let fanChange = 0;
 
       if (weeklyWinners.has(t.id)) {
-        matchPrize = isRegular ? 9000 : 25000;
+        matchPrize = isRegular ? 20000 : 50000;
         fanChange = isRegular ? 45000 : 120000;
       } else if (weeklyLosers.has(t.id)) {
-        matchPrize = isRegular ? 2500 : 6000;
+        matchPrize = isRegular ? 3000 : 10000;
         fanChange = isRegular ? -15000 : -35000;
       }
 
       const ticketRevenue = t.region === 'LCK' ? Math.floor(t.fans * 0.01) : 3000;
 
       const teamPlayers = nextPlayers.filter(p => p.teamId === t.id);
-      const salaryExpense = teamPlayers.reduce((sum, p) => sum + Math.floor(p.salary / 10), 0);
+      const salaryExpense = teamPlayers.reduce((sum, p) => sum + Math.floor(p.salary / 24), 0);
 
       const streak = getTeamStreak(t.id, finalSchedule);
       let sponsorBonus = 0;
@@ -824,13 +824,13 @@ export const createMatchSlice: StateCreator<
       if (t.id === playerTeamId) {
         const activeIds = Object.values(get().activeStaff).filter(Boolean);
         const activeList = get().coachingStaff.filter(s => activeIds.includes(s.id));
-        staffSalaryExpense = activeList.reduce((sum, s) => sum + Math.floor(s.salary * 0.1), 0);
+        staffSalaryExpense = activeList.reduce((sum, s) => sum + Math.floor(s.salary / 24), 0);
       }
 
       const totalSal = teamPlayers.reduce((sum, p) => sum + p.salary, 0);
       let luxuryTax = 0;
-      if (totalSal > 350000) {
-        luxuryTax = Math.floor(((totalSal - 350000) / 10) * 1.5);
+      if (totalSal > 450000) {
+        luxuryTax = Math.floor(((totalSal - 450000) / 24) * 1.2);
       }
 
       const totalOutflow = salaryExpense + staffSalaryExpense + luxuryTax;
@@ -844,10 +844,10 @@ export const createMatchSlice: StateCreator<
     });
 
     const playerTeamObj = get().teams.find(t => t.id === playerTeamId)!;
-    const pMatchPrize = playerWon ? (isRegular ? 9000 : 25000) : (isRegular ? 2500 : 6000);
+    const pMatchPrize = playerWon ? (isRegular ? 20000 : 50000) : (isRegular ? 3000 : 10000);
     const pTicketRevenue = Math.floor(playerTeamObj.fans * 0.01);
     const teamPlay = nextPlayers.filter(p => p.teamId === playerTeamId);
-    const pWeeklySalaries = teamPlay.reduce((sum, p) => sum + Math.floor(p.salary / 10), 0);
+    const pWeeklySalaries = teamPlay.reduce((sum, p) => sum + Math.floor(p.salary / 24), 0);
 
     const pSponsorStreak = getTeamStreak(playerTeamId, finalSchedule);
     const pSponsorBonus = pSponsorStreak.type === 'W' ? pSponsorStreak.count * 1500 : 0;
@@ -856,12 +856,12 @@ export const createMatchSlice: StateCreator<
 
     const pActiveIds = Object.values(get().activeStaff).filter(Boolean);
     const pActiveList = get().coachingStaff.filter(s => pActiveIds.includes(s.id));
-    const pStaffWage = pActiveList.reduce((sum, s) => sum + Math.floor(s.salary * 0.1), 0);
+    const pStaffWage = pActiveList.reduce((sum, s) => sum + Math.floor(s.salary / 24), 0);
 
     const pTotalSal = teamPlay.reduce((sum, p) => sum + p.salary, 0);
     let pLuxuryTax = 0;
-    if (pTotalSal > 350000) {
-      pLuxuryTax = Math.floor(((pTotalSal - 350000) / 10) * 1.5);
+    if (pTotalSal > 450000) {
+      pLuxuryTax = Math.floor(((pTotalSal - 450000) / 24) * 1.2);
     }
 
     const pTotalOutflows = pWeeklySalaries + pStaffWage + pLuxuryTax;
@@ -876,7 +876,7 @@ export const createMatchSlice: StateCreator<
         : `⚙️ 연승/연패 스폰서 변동액: N/A`;
 
     const luxuryTaxMsg = pLuxuryTax > 0
-      ? `🚨 [사치세 부과] 샐러리 캡(35억) 초과분 벌금 주 정산: -${formatCurrency(pLuxuryTax)}\n`
+      ? `🚨 [사치세 부과] 샐러리 캡(45억) 초과분 벌금 주 정산: -${formatCurrency(pLuxuryTax)}\n`
       : '';
 
     const contentTemplate = `감독님! 한 주간 노고가 많으셨습니다. 프런트 오피스에서 실시간 재정 실태 및 연봉 정산 결산서를 전달합니다.\n\n[이번 주간 재정 실시간 정산 보고]\n💰 경기 참가·승리 상금: +${formatCurrency(pMatchPrize)}\n🎟️ 티켓 및 굿즈 매출: +${formatCurrency(pTicketRevenue)}\n${streakMsg}\n\n💸 선수단 주간 총 급여지출: -${formatCurrency(pWeeklySalaries)}\n🕴️ 코칭스태프 계약직 주간 급배: -${formatCurrency(pStaffWage)}\n${luxuryTaxMsg}📈 최종 순수익: ${pNetIncome < 0 ? `-${formatCurrency(Math.abs(pNetIncome))}` : `+${formatCurrency(pNetIncome)}`}\n\n성공적으로 주간 재정 정산이 집행 완료되었습니다. 다음 경기 승리를 위해 감독님의 탁월한 지도를 기대합니다!`;

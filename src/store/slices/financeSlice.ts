@@ -33,11 +33,11 @@ export const createFinanceSlice: StateCreator<
     if (!myTeam) return { success: false, message: '소속 팀 정보를 찾을 수 없습니다.' };
 
     const currentSalariesSum = players.filter(p => p.teamId === playerTeamId).reduce((sum, p) => sum + p.salary, 0);
-    const SALARY_CAP = 350000;
+    const SALARY_CAP = 450000;
     if (currentSalariesSum + player.salary > SALARY_CAP) {
       return { 
         success: false, 
-        message: `연봉 상한선(샐러리 캡, 35억 원)을 초과할 수 없습니다. (현재 총 연봉: ${(currentSalariesSum / 10000).toFixed(2)}억 원, 추가할 선수 연봉: ${(player.salary / 10000).toFixed(2)}억 원, 합계: ${((currentSalariesSum + player.salary) / 10000).toFixed(2)}억 원)` 
+        message: `연봉 상한선(샐러리 캡, 45억 원)을 초과할 수 없습니다. (현재 총 연봉: ${(currentSalariesSum / 10000).toFixed(2)}억 원, 추가할 선수 연봉: ${(player.salary / 10000).toFixed(2)}억 원, 합계: ${((currentSalariesSum + player.salary) / 10000).toFixed(2)}억 원)` 
       };
     }
 
@@ -471,11 +471,11 @@ export const createFinanceSlice: StateCreator<
     if (!myTeam) return { success: false, message: '소속팀 정보를 찾을 수 없습니다.' };
 
     const currentSalariesSum = players.filter(p => p.teamId === playerTeamId).reduce((sum, p) => sum + p.salary, 0);
-    const SALARY_CAP = 350000;
+    const SALARY_CAP = 450000;
     if (currentSalariesSum + rookie.salary > SALARY_CAP) {
       return { 
         success: false, 
-        message: `연봉 상한선(샐러리 캡, 35억 원)을 초과하게 되어 연습생을 고용할 수 없습니다. (현재 총 연봉: ${(currentSalariesSum / 10000).toFixed(2)}억 원, 연습생 연봉: ${(rookie.salary / 10000).toFixed(2)}억 원)` 
+        message: `연봉 상한선(샐러리 캡, 45억 원)을 초과하게 되어 연습생을 고용할 수 없습니다. (현재 총 연봉: ${(currentSalariesSum / 10000).toFixed(2)}억 원, 연습생 연봉: ${(rookie.salary / 10000).toFixed(2)}억 원)` 
       };
     }
 

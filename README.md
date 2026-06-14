@@ -1,148 +1,509 @@
-# 🎮 LoL Manager 2026 (롤 매니저 2026)
-
 <div align="center">
 
-![GitHub License](https://img.shields.io/github/license/google-studio/lol-manager?style=for-the-badge&color=blue)
-![React](https://img.shields.io/badge/react-19.0.1-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
-![TypeScript](https://img.shields.io/badge/typescript-5.8.2-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
-![Zustand](https://img.shields.io/badge/zustand-5.0.14-%23ea4aaa.svg?style=for-the-badge&logo=react&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/tailwindcss-4.1.14-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Netlify](https://img.shields.io/badge/netlify-%2300C7B7.svg?style=for-the-badge&logo=netlify&logoColor=white)
+# 👑 LoL Manager 2026
 
-**2026년 서머 스플릿 글로벌 로스터와 130+개 챔피언이 연계된 프리미엄 E-Sports 시뮬레이션 웹 애플리케이션**
+### LCK 구단주가 되어 정상을 정복하라
+
+**풀 시뮬레이션 e스포츠 매니저 게임 · React + TypeScript + Zustand**
+
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Zustand](https://img.shields.io/badge/Zustand-5-orange)](https://zustand.docs.pmnd.rs/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+[🎮 플레이하기](#-빠른-시작) · [📖 게임 가이드](#-게임-가이드) · [🏗️ 아키텍처](#%EF%B8%8F-아키텍처) · [🤝 기여하기](#-기여하기)
+
+---
 
 </div>
 
----
+## 📋 목차
 
-## 📖 프로젝트 개요 (Overview)
-
-**LoL Manager 2026**은 리그 오브 레전드 프로 구단의 감독이 되어 선수단 구성, 이적 시장 영입, 전술 수립 및 실시간 경기 시뮬레이션을 통해 LCK 및 월드 챔피언십 우승을 겨루는 **React/TypeScript 기반의 하이엔드 구단 관리 시뮬레이터**입니다. 
-
-단순한 수치 경쟁을 넘어, 실제 2026년 6월 현재 활동 중인 국내외 오피셜 로스터와 130개 이상의 챔피언 카운터/시너지 상성 공식을 도입하여 극대화된 전략성과 운영의 묘미를 제공합니다.
-
----
-
-## 🌟 핵심 게임 시스템 (Core Systems)
-
-### 1. 🧬 스마트 밴픽 드래프트 AI (Draft AI)
-구단 감독으로서 가장 중요하게 설계된 전술적 분기점입니다.
-*   **카운터/시너지 가중치**: 모든 챔피언은 카운터 ID(`counterIds`)와 시너지 ID(`synergyIds`) 관계가 정밀 설계되어 있습니다. 밴픽 창에서 상대편의 카운터 챔피언을 선택하면 디버프가 주어지며, 아군 간의 조합(예: 야스오-그라가스 돌진 조합, 아지르-마오카이 한타 조합) 시너지가 완성되면 전체 한타력 가중치가 부여됩니다.
-*   **챔피언 숙련도 연동**: 각 선수의 고유 챔피언 숙련도(`championPool`) 수치(1~10)가 픽에 연계됩니다. 선수의 숙련도가 높은 시그니처 픽(예: Faker의 아지르/오리아나)을 쥐여주면 기본 피지컬 능력치에 추가 가산점을 획득합니다.
-
-### 2. 🏟️ 한타 연산식 기반 매치 시뮬레이션 Engine
-*   **선수 오버롤(Stat) 융합**: 라인전 페이즈(`lanePhase`), 메카닉(`mechanics`), 오더(`macro`), 한타력(`teamfight`) 등 다차원 스탯 반영.
-*   **컨디션 & 폼 시스템**: 매 경기 선수들의 에너지 소모율, 사기(Morale), 그리고 컨디션 변동 기복(`consistency`)이 실시간 반영되어 기복에 따른 능력치 버프/너프가 연산됩니다.
-*   **실시간 전투 로그**: 소환사의 협곡에서 펼쳐지는 퍼스트 블러드, 오브젝트(용/바론) 사냥, 한타 대승 등의 게임 내 하이라이트 로그가 킬 스코어와 함께 실시간 중계되며 플레이어는 이를 3배속 조절 및 즉시 완료로 제어할 수 있습니다.
-
-### 3. 💼 구단 재정 및 글로벌 이적 시장
-*   **2026 서머 라인업 완벽 반영**: LCK 10개 팀 리브랜딩 정보(DN SOOPers, HANJIN BRION, Kiwoom DRX)와 해외 주요 구단(BLG, JDG, G2 등)의 오피셜 로스터 수록.
-*   **이적 및 주급 관리**: 제한된 구단 예산 내에서 이적 보상액을 저울질하고, 이적 시장(Transfer Market)을 이용해 주전 및 벤치 자원을 영입하거나 방출할 수 있습니다.
-*   **FA 시장과 메일 시스템**: 타 구단에서 소속 선수에게 들어오는 충격적인 이적 오퍼 메일을 수락/거부하거나, FA 시장에 등장한 TheShy, Peanut, BeryL 등의 슈퍼스타들을 자유롭게 영입할 수 있습니다.
-
-### 4. 📈 선수단 훈련 및 스태프 멘탈 코칭
-*   **훈련 포인트 시스템**: 매주 제공되는 훈련 포인트를 소모해 선수의 취약점을 보강하거나 시그니처 능력치를 강화합니다.
-*   **스태프 영입**: 감독(Head Coach), 전술 코치, 멘탈 코치 등 스태프진을 영입하여 매주 훈련 효율과 선수들의 면담 사기 보정 효과를 상승시킵니다.
-*   **개별 면담 시스템**: 폼이 떨어진 선수에게 '따뜻한 격려' 또는 '따끔한 비판', '주전 보장' 등의 대화 키워드를 통해 사기(Morale)를 높여 폼 향상을 꾀합니다.
+- [🎯 프로젝트 소개](#-프로젝트-소개)
+- [✨ 주요 기능](#-주요-기능)
+- [🖼️ 스크린샷](#%EF%B8%8F-스크린샷)
+- [🚀 빠른 시작](#-빠른-시작)
+- [📖 게임 가이드](#-게임-가이드)
+- [🏗️ 아키텍처](#%EF%B8%8F-아키텍처)
+- [🔧 기술 스택](#-기술-스택)
+- [📁 프로젝트 구조](#-프로젝트-구조)
+- [⚙️ 게임 시스템 상세](#%EF%B8%8F-게임-시스템-상세)
+- [📱 모바일 지원](#-모바일-지원)
+- [🤝 기여하기](#-기여하기)
+- [📄 라이선스](#-라이선스)
 
 ---
 
-## 📂 프로젝트 폴더 구조 (Directory Structure)
+## 🎯 프로젝트 소개
+
+**LoL Manager 2026**은 실제 LCK(League of Legends Champions Korea) 프로 구단의 감독이 되어 팀을 운영하는 **풀 시뮬레이션 e스포츠 매니저 게임**입니다.
+
+2026 시즌의 실제 LCK 10개 구단(T1, Gen.G, HLE, DK, KT 등)과 실명 선수 로스터를 기반으로, 선수 영입·방출, 훈련, 전술 설정, 밴픽 드래프트, 실시간 경기 시뮬레이션까지 — 구단 운영의 모든 것을 직접 경험할 수 있습니다.
+
+> 🏆 **스프링 정규시즌 → 스프링 플레이오프 → MSI → 서머 정규시즌 → 서머 플레이오프 → Worlds**
+> 
+> 1년 풀 시즌 사이클을 완주하며 LCK 우승과 월드 챔피언을 향한 여정을 떠나보세요.
+
+### 왜 LoL Manager인가?
+
+| 특징 | 설명 |
+|------|------|
+| 🎮 **실제 데이터 기반** | 2026 시즌 실제 LCK 10개 구단 + 해외 7개 팀, 100명+ 실명 선수 |
+| ⚔️ **심층 밴픽 시스템** | 130종+ 챔피언, 카운터/시너지/메타 티어/숙련도 시스템 |
+| 📊 **고도화 매치 엔진** | 40분 분 단위 시뮬레이션, 킬/골드/오브젝트/바운티 추적 |
+| 💰 **현실적 재정 모델** | 연봉, 샐러리 캡, 사치세, 티켓 수입, 스폰서 보너스 |
+| 🧠 **전술 AI** | 상대 AI가 로스터에 맞는 전술을 자동 생성 |
+| 📱 **모바일 최적화** | 반응형 UI로 모바일에서도 완벽한 플레이 경험 |
+
+---
+
+## ✨ 주요 기능
+
+### 🏢 구단 경영 (Office)
+- **로스터 관리**: 5포지션(TOP/JG/MID/ADC/SUP) 선발 라인업 구성 및 교체
+- **이적 시장**: FA 자유계약 선수 영입, 타팀 선수 바이아웃, 소속 선수 방출
+- **연습생 육성**: 아카데미 시스템을 통한 신인 발굴 및 1군 승격
+- **계약 갱신**: 만료 임박 선수의 재계약 협상 (연봉/기간/계약금)
+- **코칭스태프**: 감독·전술코치·멘탈코치 3인 체제 영입/해고
+- **이메일 시스템**: 구단 재정 보고서, 이적 제안, 시즌 공지 등 인게임 메일
+
+### 🏋️ 훈련 시스템
+- **개인 훈련**: 선수별 7가지 훈련 집중도 설정 (라인전/메카닉/매크로/팀파이트/시야/멘탈/밸런스)
+- **선수 스탯**: 7개 핵심 능력치 (라인전·메카닉·매크로·팀파이트·샷콜링·멘탈·일관성)
+- **컨디션 관리**: 에너지·사기·폼 상태에 따른 경기력 변동
+- **대화 시스템**: 선수와의 격려/질책/출전 보장 대화로 사기 관리
+- **플레이 스타일**: 선수별 공격적/수비적/밸런스 성향 설정
+
+### ⚔️ 밴픽 드래프트 (Ban/Pick)
+- **풀 드래프트 시뮬레이션**: 실제 LCK 밴픽 순서 완벽 재현 (B1-R1-R2-B2-B3-R3 → B4-R4-R5-B5)
+- **130종+ 챔피언 풀**: 모든 포지션별 챔피언 숙련도 시스템
+- **메타 분석**: 티어 1~3 메타 챔피언, 카운터 매치업, 시너지 조합
+- **AI 자동 밴픽**: 상대 AI가 자체 로스터 분석 기반 지능형 밴픽 수행
+- **라인 배치**: 드래프트 완료 후 챔피언-포지션 스왑 가능
+
+### 🎮 실시간 경기 시뮬레이션
+- **분 단위 시뮬레이션**: 40분간 라인전→중반→후반→바론→넥서스 5단계 진행
+- **상세 전투 로그**: 솔로 킬, 갱킹, 역갱, 드래곤/바론 쟁탈, 팀파이트 등 실시간 중계
+- **킬/골드 추적**: 실시간 골드 차이 그래프, 킬 히스토리, 오브젝트 스코어보드
+- **바운티 시스템**: 연쇄 킬 현상금 및 셧다운 골드 역전 메커니즘
+- **POG 선정**: 경기 종료 후 최우수 선수(Player of the Game) 자동 산출
+- **BO3/BO5 시리즈**: 정규시즌 BO1, 플레이오프 BO3, 결승 BO5 자동 전환
+- **드래프트 적응 보너스**: BO 시리즈에서 세트 간 적응력 보정
+
+### 💰 재정 시스템
+- **주간 수입 구조**:
+  - 경기 상금: 승리 시 20,000 / 패배 시 3,000 (정규시즌 기준)
+  - 티켓·굿즈 매출: 팬 수 × 0.01
+  - 스폰서 보너스: 연승 시 증가, 연패 시 감소 (연승/연패 스트릭 반영)
+- **주간 지출 구조**:
+  - 선수단 주간 급여: 연봉 ÷ 24 (24주 분할)
+  - 코칭스태프 급여: 연봉 ÷ 24
+  - 사치세: 샐러리 캡(45억) 초과분 × 1.2배 추가 과세
+- **밸런스 설계**: 승리 시 흑자, 패배 시 적자 — 연패가 지속되면 재정 위기
+
+### 🏆 시즌 구조
+- **스프링 정규시즌** (18주): LCK 10팀 리그
+- **스프링 플레이오프** (6팀 더블 엘리미네이션)
+- **MSI** (Mid-Season Invitational): LCK 상위 2팀 + 해외 6팀 국제 대항전
+- **서머 정규시즌** (18주): 전적 초기화 재돌입
+- **서머 플레이오프** (6팀 더블 엘리미네이션)
+- **Worlds** (월드 챔피언십): 스위스 스테이지 → 8강 → 4강 → 결승
+- **스토브 리그**: 시즌 종료 후 FA 이적 시장 개방
+
+### 📚 아카이브 (역대 기록실)
+- Worlds 2011~2025 역대 우승팀·MVP·로스터·개최지 기록
+- MSI 2015~2025 역대 기록
+- LCK 2019~2025 역대 우승 기록
+- 선수 명예의 전당: Faker, Chovy, ShowMaker, Canyon, BeryL 등
+
+---
+
+## 🚀 빠른 시작
+
+### 사전 요구사항
+
+- [Node.js](https://nodejs.org/) v18.0.0 이상
+- [npm](https://www.npmjs.com/) v9.0.0 이상 (Node.js와 함께 설치됨)
+
+### 설치 및 실행
 
 ```bash
+# 1. 레포지토리 클론
+git clone https://github.com/YOUR_USERNAME/lol-manager.git
+cd lol-manager
+
+# 2. 의존성 설치
+npm install
+
+# 3. 개발 서버 실행
+npm run dev
+```
+
+브라우저에서 `http://localhost:3000`으로 접속하면 게임이 시작됩니다.
+
+### 빌드
+
+```bash
+# 프로덕션 빌드
+npm run build
+
+# 빌드 결과 미리보기
+npm run preview
+
+# 타입 체크
+npm run lint
+```
+
+### 환경 변수 (선택사항)
+
+`.env.example` 파일을 `.env`로 복사하여 설정할 수 있습니다:
+
+```bash
+cp .env.example .env
+```
+
+> **참고**: 환경 변수는 AI 기반 전술 추천 등 고급 기능에 사용되며, 기본 게임 플레이에는 필요하지 않습니다.
+
+---
+
+## 📖 게임 가이드
+
+### 1단계: 구단 선택
+게임 시작 시 LCK 10개 구단 중 하나를 선택합니다.
+
+| 티어 | 구단 | 특징 |
+|------|------|------|
+| 🔴 S | **T1** 👑 | 최다 우승, 최고 예산, Faker 보유 |
+| 🟡 S | **Gen.G** 🐯 | Chovy+Canyon 듀오, 높은 팬층 |
+| 🟠 S | **HLE** 🦊 | Zeus+Kanavi 영입, 공격적 운영 |
+| ⚫ A | **DK** 🛡️ | ShowMaker 중심, 균형 잡힌 로스터 |
+| 🔵 A | **KT** ⚡ | BDD+Aiming, 안정적 운영 |
+| 🟢 B | **DN SOOPers** 🟢 | 중위권 가성비 로스터 |
+| 🟡 B | **BNK FearX** 🦊 | 젊은 유망주 라인업 |
+| 🔴 B | **NS RedForce** 🍜 | Scout 영입, 반등 도전 |
+| 🔵 C | **Kiwoom DRX** 🐉 | 저예산 도전, 육성형 |
+| 🟢 C | **HANJIN BRION** 🚢 | 최저 예산, 하드 모드 |
+
+### 2단계: 주간 루틴
+```
+📅 경기일 전 → 훈련 / 전술 설정 / 이적 시장 확인
+⚔️ 경기일 → 밴픽 드래프트 → 실시간 매치 시뮬레이션 → 결과 확인
+📊 경기 후 → 재정 보고서 확인 / 선수 컨디션 관리 / 다음 주 준비
+```
+
+### 3단계: 전술 설정
+- **팀 포커스 역할**: 어느 포지션에 자원을 집중할지 결정
+- **게임 템포**: 초반 스노우볼 / 밸런스 / 후반 스케일링
+- **플레이 스타일**: 포크 / 팀파이트 / 스플릿 / 인게이지
+
+### 4단계: 시즌 완주
+18주 정규시즌을 거쳐 플레이오프에 진출하고, MSI와 Worlds까지 도전하세요!
+
+---
+
+## 🏗️ 아키텍처
+
+### 상태 관리 아키텍처
+
+```
+┌─────────────────────────────────────────────┐
+│                  Zustand Store              │
+│                (useGameStore)               │
+├──────────┬──────────┬──────────┬────────────┤
+│ Common   │ Match    │ Finance  │ Training   │
+│ Slice    │ Slice    │ Slice    │ Slice      │
+│          │          │          │            │
+│ - 시즌   │ - 경기   │ - 이적   │ - 훈련     │
+│ - 날짜   │ - 브래킷 │ - 급여   │ - 스탯     │
+│ - 이메일 │ - 시뮬   │ - 세금   │ - 컨디션   │
+│ - 전술   │ - 결과   │ - 계약   │ - 에너지   │
+│          │          │          │            │
+│ Draft    │          │          │            │
+│ Slice    │          │          │            │
+│ - 밴픽   │          │          │            │
+└──────────┴──────────┴──────────┴────────────┘
+```
+
+### 매치 엔진 파이프라인
+
+```
+선수 스탯 + 챔피언 숙련도 + 메타 티어
+         ↓
+    컨디션 보정 (에너지/사기/폼)
+         ↓
+  전술 보너스 (포커스/템포/스타일)
+         ↓
+   카운터/시너지 드래프트 보너스
+         ↓
+  ┌──────────────────────────────┐
+  │   40분 분 단위 시뮬레이션    │
+  │                              │
+  │  분 1~14: 라인전 (솔킬/갱킹) │
+  │  분 15~24: 중반 (타워/드래곤) │
+  │  분 25~35: 후반 (바론/한타)   │
+  │  분 36~40: 최종전 (넥서스)    │
+  └──────────────────────────────┘
+         ↓
+  경기 결과 + 개인 스탯 + POG
+```
+
+---
+
+## 🔧 기술 스택
+
+### 코어 프레임워크
+
+| 기술 | 버전 | 용도 |
+|------|------|------|
+| [React](https://react.dev/) | 19.x | UI 프레임워크 |
+| [TypeScript](https://www.typescriptlang.org/) | 5.8 | 타입 안전성 |
+| [Vite](https://vite.dev/) | 6.x | 빌드 도구 & 개발 서버 |
+
+### 스타일링 & UI
+
+| 기술 | 버전 | 용도 |
+|------|------|------|
+| [TailwindCSS](https://tailwindcss.com/) | 4.x | 유틸리티 퍼스트 CSS |
+| [shadcn/ui](https://ui.shadcn.com/) | 4.x | 컴포넌트 라이브러리 |
+| [Lucide React](https://lucide.dev/) | 0.546+ | 아이콘 시스템 |
+| [Geist Font](https://vercel.com/font) | Variable | 타이포그래피 |
+
+### 상태 & 로직
+
+| 기술 | 버전 | 용도 |
+|------|------|------|
+| [Zustand](https://zustand.docs.pmnd.rs/) | 5.x | 글로벌 상태 관리 |
+| [Recharts](https://recharts.org/) | 3.8+ | 골드/XP 실시간 차트 |
+| [Motion](https://motion.dev/) | 12.x | 애니메이션 & 트랜지션 |
+
+### 개발 도구
+
+| 기술 | 용도 |
+|------|------|
+| ESBuild | 빌드 최적화 |
+| Autoprefixer | CSS 호환성 |
+| tw-animate-css | 애니메이션 유틸리티 |
+
+---
+
+## 📁 프로젝트 구조
+
+```
 lol-manager/
+├── index.html                  # 엔트리 HTML
+├── package.json                # 의존성 및 스크립트
+├── vite.config.ts              # Vite 설정
+├── tsconfig.json               # TypeScript 설정
+├── components.json             # shadcn/ui 설정
+├── netlify.toml                # Netlify 배포 설정
+│
 ├── src/
-│   ├── components/            # 재사용 가능한 UI 컴포넌트군
-│   │   ├── dashboard/         # 오피스 홈, 로스터, 스케줄, 순위표 탭 컴포넌트
-│   │   ├── draft/             # 밴픽 드래프트 룸 및 선택 인터페이스
-│   │   ├── match/             # 실시간 경기 중계 및 시뮬레이션 로그 뷰
-│   │   └── ui/                # 아바타, 버튼 등 원자 컴포넌트 (Shadcn UI 기반)
-│   ├── data/
-│   │   └── initialData.ts     # 130+ 챔피언 및 LCK 구단/로스터/FA 원천 데이터베이스
-│   ├── store/                 # Zustand 전역 상태 저장소
-│   │   ├── slices/
-│   │   │   ├── commonSlice.ts   # 날짜, 이적, 메일, 면담 등 공통 상태 슬라이스
-│   │   │   ├── matchSlice.ts    # 밴픽, 대진 일정, 경기 시뮬레이션 전용 슬라이스
-│   │   │   └── trainingSlice.ts # 선수단 훈련 포인트 및 능력치 개편 슬라이스
-│   │   ├── storeUtils.ts      # 글로벌 구단 로스터, 대진표 생성 알고리즘 등
-│   │   └── useGameStore.ts    # 통합 게임 스토어 훅 (Zustand)
+│   ├── main.tsx                # React 앱 진입점
+│   ├── App.tsx                 # 루트 컴포넌트 (라우팅)
+│   ├── index.css               # 글로벌 스타일 & 디자인 토큰
+│   │
 │   ├── types/
-│   │   └── index.ts           # 선수, 팀, 매치, 코칭스태프 관련 전체 인터페이스 정의
+│   │   └── index.ts            # 전체 타입 정의 (Player, Team, Match, etc.)
+│   │
+│   ├── data/
+│   │   ├── initialData.ts      # 챔피언 130종 + 팀 10개 + 선수 100명+ 데이터
+│   │   └── historyData.ts      # Worlds/MSI/LCK 역대 기록 & 명예의 전당
+│   │
+│   ├── store/
+│   │   ├── useGameStore.ts     # Zustand 스토어 메인 (슬라이스 조합)
+│   │   ├── types.ts            # 스토어 인터페이스 정의
+│   │   ├── storeUtils.ts       # 유틸리티 (스케줄 생성, AI 로스터 등)
+│   │   └── slices/
+│   │       ├── commonSlice.ts  # 시즌 관리, 날짜, 전술, 이메일, 코칭스태프
+│   │       ├── matchSlice.ts   # 매치 시뮬, 브래킷, 재정 정산
+│   │       ├── financeSlice.ts # 이적, 계약, 급여, 샐러리 캡
+│   │       ├── draftSlice.ts   # 밴픽 드래프트 로직
+│   │       └── trainingSlice.ts# 훈련, 스탯 성장, 컨디션 관리
+│   │
 │   ├── utils/
-│   │   ├── draft.ts           # 밴픽 드래프트 연산 보조 함수
-│   │   ├── format.ts          # 연봉 및 예산 포맷 유틸
-│   │   └── simulator.ts       # 인게임 킬로그 및 한타 확률 연산 시뮬레이터 엔진
+│   │   ├── matchEngine.ts      # 매치 시뮬레이션 엔진 (1300줄+)
+│   │   ├── draft.ts            # AI 밴픽 알고리즘
+│   │   └── format.ts           # 통화/숫자 포맷팅 유틸
+│   │
 │   ├── views/
-│   │   ├── Dashboard.tsx      # 구단 오피스 및 메인 게임 루프 메인 대시보드
-│   │   └── Setup.tsx          # 게임 시작 시 감독 정보 등록 및 구단 선택 화면
-│   ├── App.tsx                # 라우팅 및 뷰 진입 지점
-│   ├── main.tsx
-│   └── index.css              # Glassmorphism 등 프리미엄 CSS 테마 스타일링
-├── index.html
-├── vite.config.ts             # TailwindCSS 플러그인이 탑재된 Vite 설정
-├── netlify.toml               # Netlify SPA 배포용 리다이렉트 구성
-├── package.json
-└── tsconfig.json
+│   │   ├── Setup.tsx           # 구단 선택 화면
+│   │   ├── Dashboard.tsx       # 메인 대시보드 (오피스)
+│   │   ├── DraftRoom.tsx       # 밴픽 드래프트 룸
+│   │   └── MatchViewer.tsx     # 실시간 경기 뷰어
+│   │
+│   ├── components/
+│   │   ├── dashboard/          # 대시보드 탭 컴포넌트
+│   │   │   ├── OfficeHomeTab.tsx    # 홈 (다음 경기, 순위, 메일)
+│   │   │   ├── RosterTab.tsx        # 로스터 관리 (선수 상세/교체)
+│   │   │   ├── ScheduleTab.tsx      # 일정표
+│   │   │   ├── StandingsTab.tsx     # 리그 순위표
+│   │   │   ├── BracketTab.tsx       # 토너먼트 대진표
+│   │   │   └── ArchiveTab.tsx       # 역대 기록실
+│   │   │
+│   │   ├── TacticsTab.tsx      # 전술 설정 패널
+│   │   ├── TrainingTab.tsx     # 훈련 시스템 패널
+│   │   ├── StaffTab.tsx        # 코칭스태프 관리
+│   │   ├── TransferMarket.tsx  # 이적 시장
+│   │   ├── LeagueTable.tsx     # 리그 테이블 위젯
+│   │   ├── LastMatchReport.tsx # 최근 경기 리포트
+│   │   ├── SpotlightCarousel.tsx    # 선수 스포트라이트
+│   │   └── PlayerPerformancePanel.tsx # 선수 성과 분석
+│   │
+│   ├── components/ui/          # shadcn/ui 기본 컴포넌트
+│   │   ├── badge.tsx, button.tsx, card.tsx, input.tsx
+│   │   ├── progress.tsx, scroll-area.tsx, separator.tsx
+│   │   ├── sheet.tsx, sidebar.tsx, skeleton.tsx
+│   │   ├── tabs.tsx, tooltip.tsx
+│   │   └── ... 
+│   │
+│   ├── hooks/
+│   │   └── use-mobile.ts       # 모바일 감지 커스텀 훅
+│   │
+│   └── lib/
+│       └── utils.ts            # cn() 유틸리티 (clsx + tailwind-merge)
+│
+└── lib/
+    └── utils.ts                # 루트 유틸리티
 ```
 
 ---
 
-## 🎨 상태 관리 아키텍처 (State Management Architecture)
+## ⚙️ 게임 시스템 상세
 
-이 프로젝트는 단일 전역 저장소인 **Zustand**를 통해 거대한 구단 시뮬레이션 데이터를 유기적으로 제어합니다. 상태 파편화를 막기 위해 상태 영역을 **Slices** 패턴으로 결합하여 구조화하였습니다.
+### 선수 능력치 시스템
 
-```mermaid
-graph TD
-    subgraph Zustand Store
-        A[useGameStore] --> B[createCommonSlice]
-        A --> C[createMatchSlice]
-        A --> D[createTrainingSlice]
-    end
-    
-    B -->|선수/구단 기본 상태 제공| C
-    D -->|선수 능력치 육성 결과 반영| B
-    C -->|경기 시뮬레이션 결과 및 킬 로그| B
-    
-    E[Setup View] -->|구단 선택 및 초기화| B
-    F[Dashboard View] -->|훈련 포인트 할당 및 선수 면담| D
-    F -->|대진 일정 진행 및 경기 시작| C
-    G[Draft Room] -->|AI/Player 밴픽 수행| C
-    H[Match Arena] -->|한타 시뮬레이터 구동| C
+각 선수는 **7개 핵심 능력치** (1~99)를 가지며, 이 수치가 경기 시뮬레이션의 근간을 이룹니다:
+
+| 능력치 | 설명 | 영향 |
+|--------|------|------|
+| **라인전** (lanePhase) | 1:1 라인 장악력 | 초반 솔로 킬, CS 차이 |
+| **메카닉** (mechanics) | 조작 숙련도 | 아웃플레이, 스킬샷 정확도 |
+| **매크로** (macro) | 전략적 판단력 | 오브젝트 컨트롤, 맵 리딩 |
+| **팀파이트** (teamfight) | 집단전 기여도 | 한타 승률, 딜 효율 |
+| **샷콜링** (shotcalling) | 지휘 능력 | 팀 시너지 보너스 |
+| **멘탈** (mental) | 정신력 | 위기 극복, 시리즈 피로 내성 |
+| **일관성** (consistency) | 안정성 | 경기별 편차 크기 (높을수록 안정) |
+
+### 챔피언 시스템
+
+- **130종+ 챔피언**: 각각 고유한 레인·티어·스케일링·스타일 보유
+- **숙련도 레벨** (1~10): 선수별 챔피언 숙련도에 따른 보너스/패널티
+  - 10 숙련: +6 보너스 / 4~6 숙련: ±0 / 미숙련: -8 패널티
+- **메타 티어** (1~3): Tier 1 OP 챔피언 +3, Tier 3 니치 챔피언 -3
+- **카운터 매치업**: 상성 관계에 따른 추가 보너스
+- **시너지 조합**: 팀 내 챔피언 간 궁합 보너스
+
+### 재정 모델 상세
+
+```
+📊 T1 기준 주간 재정 시뮬레이션 (예시)
+
+[수입]
+├── 승리 상금:        +20,000  (패배 시: +3,000)
+├── 티켓/굿즈 매출:   +26,000  (팬 260만 × 0.01)
+└── 스폰서 보너스:    +1,500~  (연승 스트릭 반영)
+
+[지출]
+├── 선수단 주간 급여:  -18,875  (총 연봉 453,000 ÷ 24)
+├── 코칭스태프 급여:   -변동    (고용 시)
+└── 사치세:           -해당 시  (45억 초과분 × 1.2 ÷ 24)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+승리 시 순수익:   약 +28,625 (흑자 ✅)
+패배 시 순수익:   약 -8,375  (적자 ❌)
 ```
 
-*   **createCommonSlice**: 날짜 흐름, 메일 수신/확인, 이적 제의 처리, 코칭스태프 영입 및 해고, 선수단과의 면담 대화 등 구단 일상 운영을 제어합니다.
-*   **createMatchSlice**: 시즌 일정 더블 라운드 로빈 스케줄 생성, 밴픽 화면 전환, AI 드래프트 의사 결정, 인게임 킬 로그 및 실시간 한타 시뮬레이션의 경기 진행 상태를 제어합니다.
-*   **createTrainingSlice**: 매주 갱신되는 훈련 점수를 소모하여 선수들의 능력치(라인전, 메카닉, 운영 등)를 직접 조율하는 훈련 세션을 제어합니다.
+### 매치 엔진 핵심 메커니즘
+
+#### 1. 골드 리드 스케일링
+```
+goldLeadBonus = √(goldDiff / 300)
+```
+- 제곱근 스케일링으로 초반 리드의 수학적 잠금(lockout)을 방지
+- 6000골드 이상 차이 시 15% 확률로 **방심(complacency) 패널티** 발동
+
+#### 2. 시리즈 적응 시스템 (BO3/BO5)
+- 패배 팀: 다음 세트에서 +3 드래프트 적응 보너스
+- 5세트(Silver Scrapes): 에이스 선수의 멘탈·매크로 ×1.5배 증폭
+- 정신력 85 미만 선수: 세트마다 피로도 누적
+
+#### 3. 플레이 스타일 상호작용
+- **공격적** 선수: 라인전·메카닉 +4, 매크로·멘탈 -3, 갱킹에 취약 +4
+- **수비적** 선수: 매크로·멘탈 +4, 라인전·메카닉 -3, 갱킹 회피 -4
+- **밸런스** 선수: 보정 없음
 
 ---
 
-## 🚀 로컬 개발 환경 구동 방법 (Local Quick Start)
+## 📱 모바일 지원
 
-### Prerequisites
-*   Node.js (LTS 버전 권장, 18.x 이상)
+LoL Manager 2026은 **모바일 퍼스트** 접근법으로 최적화되었습니다:
 
-### Steps
-1.  **원천 소스코드 복제 및 경로 이동**:
-    ```bash
-    git clone https://github.com/YOUR_GITHUB_ID/lol-manager.git
-    cd lol-manager
-    ```
-2.  **의존성 패키지 설치**:
-    ```bash
-    npm install
-    ```
-3.  **로컬 개발 서버 실행**:
-    ```bash
-    npm run dev
-    ```
-    *   개발 서버가 가동되면 웹 브라우저에서 `http://localhost:3000`으로 접속하여 게임을 진행합니다.
+- ✅ 반응형 레이아웃 (375px ~ 4K 디스플레이)
+- ✅ 경기 뷰어: 킬 스코어 HUD 상단 고정 + 콘텐츠 스크롤 분리
+- ✅ 드래프트 룸: 모바일 전용 탭 네비게이션
+- ✅ 대시보드: 컴팩트 헤더 및 터치 최적화 시트 UI
+- ✅ 차트: 모바일 뷰포트 대응 여백 최적화
+- ✅ `100dvh` 기반 높이 계산으로 모바일 브라우저 호환
 
 ---
 
-## 🌐 Netlify 클라우드 배포 스펙 (Netlify Deployment)
+## 🤝 기여하기
 
-본 저장소는 클라우드 호스팅 서비스인 **Netlify** 배포용 설정(`netlify.toml`)을 루트에 제공하고 있어, GitHub 연동 시 원클릭 빌드 및 무중단 배포를 지원합니다.
+기여를 환영합니다! 다음과 같은 방법으로 참여할 수 있습니다:
 
-### netlify.toml 설정 구성
-*   **빌드 설정**: 빌드 명령어로 `npm run build`를 수행하고, 배포 디렉토리로 `dist`를 탐색합니다.
-*   **SPA 라우팅 보호**: `/*` 경로로 들어오는 새로고침 및 직접 주소 입력 요청을 `index.html`로 상태 코드 200과 함께 정상 라우팅하여 React App의 라우트 이탈 에러(404 Not Found)를 완벽히 해결합니다.
+### 기여 방법
+
+1. 이 저장소를 **Fork**합니다
+2. 기능 브랜치를 생성합니다: `git checkout -b feature/amazing-feature`
+3. 변경사항을 커밋합니다: `git commit -m 'feat: Add amazing feature'`
+4. 브랜치에 푸시합니다: `git push origin feature/amazing-feature`
+5. **Pull Request**를 생성합니다
+
+### 기여 아이디어
+
+- 🌍 **다국어 지원**: 영어/일본어 등 국제화
+- 📊 **시즌 통계 대시보드**: 시즌 전체 기록 시각화
+- 🎵 **사운드 효과**: 경기 중계 효과음
+- 🤖 **AI 강화**: 더 정교한 상대 AI 전략
+- 🎨 **테마 시스템**: 다크/라이트 모드 전환
+- 💾 **세이브/로드**: localStorage 기반 게임 저장
+
+### 커밋 컨벤션
+
+```
+feat: 새로운 기능 추가
+fix: 버그 수정
+docs: 문서 변경
+style: 코드 스타일 변경 (포맷팅 등)
+refactor: 리팩토링
+perf: 성능 개선
+test: 테스트 추가/수정
+chore: 빌드 설정, 패키지 등 기타 변경
+```
+
+---
+
+## 📄 라이선스
+
+이 프로젝트는 [MIT 라이선스](LICENSE)에 따라 배포됩니다.
+
+---
+
+## 🙏 크레딧 & 면책 조항
+
+- 이 프로젝트는 **팬 프로젝트**로, 상업적 목적이 아닌 학습 및 엔터테인먼트 목적으로 제작되었습니다.
+- 게임 내 등장하는 선수명, 팀명, 로고 등은 각 구단 및 Riot Games의 상표이며, 본 프로젝트와의 공식적인 연관은 없습니다.
+- [League of Legends](https://www.leagueoflegends.com/)는 Riot Games, Inc.의 등록 상표입니다.
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the LCK community**
+
+⭐ 이 프로젝트가 마음에 드셨다면 Star를 눌러주세요!
+
+</div>
+

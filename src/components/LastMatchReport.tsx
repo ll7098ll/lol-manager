@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { Trophy, Activity, Eye, DollarSign, Target, Shield, Compass, Swords, Loader2, Sparkles, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useIsMobile } from '../hooks/use-mobile';
 
 export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ layoutMode = 'full' }) => {
   const { lastMatchResult, teams, players } = useGameStore();
+  const isMobile = useIsMobile();
+  const [showDetails, setShowDetails] = useState(!isMobile);
 
   if (!lastMatchResult) {
     return (
@@ -133,8 +136,25 @@ export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ 
         </div>
       </div>
 
+      {/* Toggle Button for Widget mode on Mobile */}
+      {isWidget && (
+        <div className="flex justify-center shrink-0">
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="w-full py-2.5 bg-background hover:bg-card border border-border rounded-xl text-[10px] sm:text-xs font-bold font-mono transition-all text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+          >
+            {showDetails ? (
+              <>접기 (Hide Detailed Stats) ▴</>
+            ) : (
+              <>선수별 상세 스탯 펼치기 (Show Detailed Stats) ▾</>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Duel statistics lists */}
-      <div className={`grid grid-cols-1 ${isWidget ? '' : 'xl:grid-cols-2'} gap-5 flex-1 min-h-0`}>
+      {(!isWidget || showDetails) && (
+        <div className={`grid grid-cols-1 ${isWidget ? '' : 'xl:grid-cols-2'} gap-5 flex-1 min-h-0`}>
         
         {/* Home Team Stats */}
         <div className="space-y-3">
@@ -301,6 +321,7 @@ export const LastMatchReport: React.FC<{ layoutMode?: 'widget' | 'full' }> = ({ 
         </div>
 
       </div>
+      )}
 
     </div>
   );

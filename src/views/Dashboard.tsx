@@ -238,8 +238,8 @@ export default function Dashboard() {
         <div className="flex-1 flex flex-col min-w-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-background via-background to-muted/20">
           
           {/* TOP ACTION BAR */}
-          <header className="h-16 shrink-0 border-b border-border/40 bg-background/60 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10">
-            <div className="flex items-center gap-4">
+          <header className="h-16 shrink-0 border-b border-border/40 bg-background/60 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 sticky top-0 z-10">
+            <div className="flex items-center gap-2 sm:gap-4">
               {!isMobile && (
                 <>
                   <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
@@ -247,21 +247,23 @@ export default function Dashboard() {
                 </>
               )}
               <div className="flex flex-col">
-                <div className="flex items-center gap-1.5 leading-none mb-1">
-                  <strong className="text-xs font-mono text-primary uppercase tracking-wider bg-primary/10 px-1.5 py-0.5 rounded shadow-sm">
-                    {currentDate.getFullYear()} {seasonPhase.includes('SPRING') ? 'SPRING' : 'SUMMER'} SPLIT
+                <div className="flex items-center gap-1 sm:gap-1.5 leading-none mb-1">
+                  <strong className="text-[10px] sm:text-xs font-mono text-primary uppercase tracking-wider bg-primary/10 px-1.5 py-0.5 rounded shadow-sm">
+                    {isMobile ? `${currentDate.getFullYear().toString().slice(-2)} ${seasonPhase.includes('SPRING') ? 'SPR' : 'SUM'}` : `${currentDate.getFullYear()} ${seasonPhase.includes('SPRING') ? 'SPRING' : 'SUMMER'} SPLIT`}
                   </strong>
                   <span className="text-[10px] text-muted-foreground font-mono font-bold uppercase flex items-center gap-1">
-                    <ChevronRight size={10} /> Week {currentWeek}
+                    <ChevronRight size={10} /> {isMobile ? `W${currentWeek}` : `Week ${currentWeek}`}
                   </span>
                 </div>
-                <div className="text-[10px] font-mono text-muted-foreground/80 flex items-center gap-1.5">
-                  <Globe size={10} /> {seasonPhase.includes('PLAYOFFS') ? '결선 토너먼트 진행 중' : '정규 시즌 진행 중 (Regular Season)'} | {currentDate.toLocaleDateString()}
-                </div>
+                {!isMobile && (
+                  <div className="text-[10px] font-mono text-muted-foreground/80 flex items-center gap-1.5">
+                    <Globe size={10} /> {seasonPhase.includes('PLAYOFFS') ? '결선 토너먼트 진행 중' : '정규 시즌 진행 중 (Regular Season)'} | {currentDate.toLocaleDateString()}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-3">
               <div className="hidden sm:flex flex-col items-end mr-2">
                 <span className="text-[9px] font-mono font-bold text-muted-foreground uppercase tracking-widest mb-0.5">구단 보유 예산</span>
                 <span className="text-sm font-black font-mono tracking-tight text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)] flex items-center gap-1">
@@ -270,7 +272,7 @@ export default function Dashboard() {
               </div>
 
               {/* Mobile-only compact budget badge */}
-              <div className="flex sm:hidden items-center gap-0.5 text-[9px] font-mono font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg shadow-sm shrink-0">
+              <div className="flex sm:hidden items-center gap-0.5 text-[9px] font-mono font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-1 rounded-lg shadow-sm shrink-0">
                 <DollarSign size={10} className="shrink-0" />
                 <span>{formatCurrency(myTeam.budget).replace(' 만원', '만')}</span>
               </div>
@@ -287,10 +289,10 @@ export default function Dashboard() {
                       setIsAdvancing(false);
                     }, 400);
                   }}
-                  className="h-10 px-4 sm:px-5 font-black font-mono border-border/80 text-foreground hover:bg-muted/50 hover:text-primary hover:border-primary/40 rounded-xl cursor-pointer transition-all hover:scale-105 active:scale-95 shrink-0 text-xs flex items-center gap-1.5 bg-card/30"
+                  className="h-10 px-2 sm:px-5 font-black font-mono border-border/80 text-foreground hover:bg-muted/50 hover:text-primary hover:border-primary/40 rounded-xl cursor-pointer transition-all hover:scale-105 active:scale-95 shrink-0 text-[10px] sm:text-xs flex items-center gap-1 bg-card/30"
                 >
-                  <FastForward size={14} className="text-primary animate-pulse" />
-                  <span>경기일 즉시진행</span>
+                  <FastForward size={12} className="text-primary animate-pulse" />
+                  <span>{isMobile ? "즉시진행" : "경기일 즉시진행"}</span>
                 </Button>
               )}
               
@@ -310,7 +312,7 @@ export default function Dashboard() {
                     }, 300);
                   }
                 }}
-                className={`h-10 px-6 sm:px-8 font-black font-mono transition-all rounded-xl cursor-pointer hover:scale-105 active:scale-95 group relative overflow-hidden shrink-0 text-white
+                className={`h-10 px-3 sm:px-8 font-black font-mono transition-all rounded-xl cursor-pointer hover:scale-105 active:scale-95 group relative overflow-hidden shrink-0 text-white
                   ${isAdvancing ? 'opacity-80 scale-95 pointer-events-none' : ''}
                   ${activeMatch 
                     ? 'bg-rose-600 hover:bg-rose-500 shadow-[0_0_20px_rgba(225,29,72,0.4)]' 
@@ -321,15 +323,15 @@ export default function Dashboard() {
                 `}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
-                <span className="relative z-10 flex items-center gap-2 text-sm uppercase tracking-wider">
+                <span className="relative z-10 flex items-center gap-1 text-[11px] sm:text-sm uppercase tracking-wider">
                   {isAdvancing ? (
-                    <><Activity size={16} className="animate-spin" /> 진행 중...</>
+                    <><Activity size={14} className="animate-spin" /> {isMobile ? "진행..." : "진행 중..."}</>
                   ) : activeMatch ? (
-                    <><Zap size={16} className="animate-bounce" /> 밴픽 룸 (DRAFT)</>
+                    <><Zap size={14} className="animate-bounce" /> {isMobile ? "밴픽 룸" : "밴픽 룸 (DRAFT)"}</>
                   ) : seasonPhase === 'STOVE_LEAGUE' ? (
-                    <>🚀 시즌 시작 (START)</>
+                    <>🚀 {isMobile ? "시작" : "시즌 시작 (START)"}</>
                   ) : (
-                    <>CONTINUE <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" /></>
+                    <>{isMobile ? "진행" : "CONTINUE"} <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" /></>
                   )}
                 </span>
               </Button>

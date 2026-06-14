@@ -199,7 +199,7 @@ export const RosterTab: React.FC<RosterTabProps> = ({
             </div>
           </div>
 
-          <div className="bg-background/50 rounded-xl border border-border p-4 flex-1 min-h-[220px] relative">
+          <div className={`bg-background/50 rounded-xl border border-border p-4 flex-1 ${isMobile ? 'min-h-[180px]' : 'min-h-[220px]'} relative`}>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                 <PolarGrid stroke="#334155" />
@@ -246,44 +246,44 @@ export const RosterTab: React.FC<RosterTabProps> = ({
                 ⚡ 일일 지도 한계치: {coachingActionsLeft} / 3 남음
               </div>
             </div>
-            <ScrollArea className="flex-1 pr-3">
-              <div className="grid grid-cols-1 gap-2.5">
-                <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {isMobile ? (
+              <div className="grid grid-cols-1 gap-2">
+                <div className="bg-background shadow-inner shadow-black/50 p-2.5 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs text-foreground block font-bold font-sans">🎯 라인전 디테일 정밀 연마</span>
                     <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">LanePhase +2, Consistency +1 • COST: ⚡8 Energy</span>
                   </div>
                   {renderActionButton('LANING', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.lanePhase >= (p.potential || 99))}
                 </div>
-                <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="bg-background shadow-inner shadow-black/50 p-2.5 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs text-foreground block font-bold font-sans">⚡ 고강도 솔로랭크 피지컬 단련</span>
                     <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Mechanics +2, LanePhase +1 • COST: ⚡10 Energy</span>
                   </div>
                   {renderActionButton('SOLOQ', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.mechanics >= (p.potential || 99))}
                 </div>
-                <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="bg-background shadow-inner shadow-black/50 p-2.5 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs text-foreground block font-bold font-sans">🧠 전술 운영 및 오더 맥락 정립</span>
                     <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Macro +3, Shotcalling +2 • COST: ⚡6 Energy</span>
                   </div>
                   {renderActionButton('MACRO', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.macro >= (p.potential || 99))}
                 </div>
-                <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="bg-background shadow-inner shadow-black/50 p-2.5 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs text-foreground block font-bold font-sans">⚔️ 스크림 연쇄 교전 포지셔닝 설계</span>
                     <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Teamfight +2, Macro +1 • COST: ⚡8 Energy</span>
                   </div>
                   {renderActionButton('SCRIMS', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.teamfight >= (p.potential || 99))}
                 </div>
-                <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="bg-background shadow-inner shadow-black/50 p-2.5 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs text-foreground block font-bold font-sans">🧠 평정심 유지를 위한 마인드 실습</span>
                     <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Mental +2, Consistency +1 • COST: ⚡8 Energy</span>
                   </div>
                   {renderActionButton('MINDSET', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.mental >= (p.potential || 99))}
                 </div>
-                <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="bg-background shadow-inner shadow-black/50 p-2.5 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-xs text-foreground block font-bold font-sans">🛌 안락한 전술 휴식 (Rest & Rehab)</span>
                     <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Restores +35 Energy & Conditions • COST: Free (No Action points cost!)</span>
@@ -291,7 +291,54 @@ export const RosterTab: React.FC<RosterTabProps> = ({
                   {renderActionButton('REST', '휴식 지시', (p.energy ?? 100) >= 100)}
                 </div>
               </div>
-            </ScrollArea>
+            ) : (
+              <ScrollArea className="flex-1 pr-3">
+                <div className="grid grid-cols-1 gap-2.5">
+                  <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs text-foreground block font-bold font-sans">🎯 라인전 디테일 정밀 연마</span>
+                      <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">LanePhase +2, Consistency +1 • COST: ⚡8 Energy</span>
+                    </div>
+                    {renderActionButton('LANING', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.lanePhase >= (p.potential || 99))}
+                  </div>
+                  <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs text-foreground block font-bold font-sans">⚡ 고강도 솔로랭크 피지컬 단련</span>
+                      <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Mechanics +2, LanePhase +1 • COST: ⚡10 Energy</span>
+                    </div>
+                    {renderActionButton('SOLOQ', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.mechanics >= (p.potential || 99))}
+                  </div>
+                  <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs text-foreground block font-bold font-sans">🧠 전술 운영 및 오더 맥락 정립</span>
+                      <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Macro +3, Shotcalling +2 • COST: ⚡6 Energy</span>
+                    </div>
+                    {renderActionButton('MACRO', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.macro >= (p.potential || 99))}
+                  </div>
+                  <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs text-foreground block font-bold font-sans">⚔️ 스크림 연쇄 교전 포지셔닝 설계</span>
+                      <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Teamfight +2, Macro +1 • COST: ⚡8 Energy</span>
+                    </div>
+                    {renderActionButton('SCRIMS', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.teamfight >= (p.potential || 99))}
+                  </div>
+                  <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs text-foreground block font-bold font-sans">🧠 평정심 유지를 위한 마인드 실습</span>
+                      <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Mental +2, Consistency +1 • COST: ⚡8 Energy</span>
+                    </div>
+                    {renderActionButton('MINDSET', '훈련 지시', coachingActionsLeft <= 0 || (p.energy ?? 100) < 12 || p.mental >= (p.potential || 99))}
+                  </div>
+                  <div className="bg-background shadow-inner shadow-black/50 p-3 rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs text-foreground block font-bold font-sans">🛌 안락한 전술 휴식 (Rest & Rehab)</span>
+                      <span className="text-[10px] text-muted-foreground font-mono mt-1 block tracking-tight">Restores +35 Energy & Conditions • COST: Free (No Action points cost!)</span>
+                    </div>
+                    {renderActionButton('REST', '휴식 지시', (p.energy ?? 100) >= 100)}
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
           </div>
         </div>
       </div>

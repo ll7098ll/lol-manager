@@ -196,7 +196,7 @@ export default function MatchViewer() {
   const pogTeam = teams.find(t => t.id === pogPlayer?.teamId);
 
   return (
-    <div className="min-h-screen xl:h-screen xl:overflow-hidden bg-background text-foreground flex flex-col justify-between font-sans relative p-3 md:p-4 gap-2.5 selection:bg-primary/30 selection:text-primary">
+    <div className="h-[100dvh] overflow-hidden bg-background text-foreground flex flex-col justify-between font-sans relative p-3 md:p-4 gap-2.5 selection:bg-primary/30 selection:text-primary">
       
       {/* Top Header Match Stats Hud */}
       <div className="bg-card/40 backdrop-blur-md border border-border rounded-2xl p-2.5 sm:p-4 shadow-[0_0_15px_rgba(0,0,0,0.5)] relative z-10 shrink-0">
@@ -307,7 +307,7 @@ export default function MatchViewer() {
       )}
 
       {/* REPLAY SCREEN LAYOUT OR FINAL SUMMARY SCOREBOARD PANEL */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 items-stretch overflow-y-auto lg:overflow-hidden scrollbar-thin">
         
         {/* PLAYBACK STAGE SCREEN */}
         {(!isMobile || mobileTab === 'LIVE' || mobileTab === 'RESULT') && (
@@ -341,7 +341,7 @@ export default function MatchViewer() {
                 </div>
 
                 {/* LIVE COMMENTARY SCROLLING BOX */}
-                <div className="flex-1 bg-background/80 rounded-xl p-3 border border-border overflow-y-auto xl:max-h-[calc(100vh-270px)] space-y-1 mb-2 font-sans text-xs leading-relaxed scrollbar-thin shadow-inner relative">
+                <div className="flex-1 bg-background/80 rounded-xl p-3 border border-border overflow-y-auto max-h-[calc(100dvh-340px)] lg:max-h-[calc(100vh-270px)] space-y-1 mb-2 font-sans text-xs leading-relaxed scrollbar-thin shadow-inner relative">
                   {visibleLogs.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-muted-foreground/50 opacity-50 animate-pulse text-[10px]">
                       경기가 곧 지연 생중계됩니다...
@@ -549,7 +549,7 @@ export default function MatchViewer() {
 
                         <div className="w-full h-[150px] sm:h-[180px] bg-background shadow-inner p-1 sm:p-2 rounded-lg border border-border">
                           <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: isMobile ? -10 : -25, bottom: 0 }}>
                               <defs>
                                 <linearGradient id="fullGoldGrad" x1="0" y1="0" x2="0" y2="1">
                                   <stop offset="5%" stopColor="#0891b2" stopOpacity={0.35}/>
@@ -697,7 +697,7 @@ export default function MatchViewer() {
                   <div className="w-full h-full min-h-[160px] relative">
                     {activeTab === 'GOLD' && (
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: isMobile ? -10 : -25, bottom: 0 }}>
                           <defs>
                             <linearGradient id="liveGoldGrad" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35}/>
@@ -734,7 +734,7 @@ export default function MatchViewer() {
 
                     {activeTab === 'XP' && (
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: isMobile ? -10 : -25, bottom: 0 }}>
                           <defs>
                             <linearGradient id="liveXpGrad" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.35}/>
@@ -771,7 +771,7 @@ export default function MatchViewer() {
 
                     {activeTab === 'DPM' && (
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dpmData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                        <BarChart data={dpmData} margin={{ top: 5, right: 5, left: isMobile ? -10 : -25, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="2 2" stroke="#1e293b" opacity={0.3} />
                           <XAxis dataKey="role" stroke="#4b5563" fontSize={8} tickLine={false} />
                           <YAxis stroke="#4b5563" fontSize={8} tickLine={false} />

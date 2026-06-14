@@ -237,7 +237,7 @@ export default function DraftRoom() {
       )}
 
       {/* MOBILE TABS TO TOGGLE VIEW */}
-      {isMobile && currentTurn !== 'COMPLETE' && (
+      {isMobile && (
         <div className="flex bg-card/40 border border-border rounded-xl p-1 shrink-0 gap-1 mb-1">
           <button
             onClick={() => setMobileTab('GRID')}
@@ -247,7 +247,7 @@ export default function DraftRoom() {
                 : 'text-muted-foreground hover:text-foreground border border-transparent'
             }`}
           >
-            🎯 챔피언 선택 그리드
+            {currentTurn === 'COMPLETE' ? "🔄 라인 배치 (SWAP)" : "🎯 챔피언 선택 그리드"}
           </button>
           <button
             onClick={() => setMobileTab('STATUS')}
@@ -257,7 +257,7 @@ export default function DraftRoom() {
                 : 'text-muted-foreground hover:text-foreground border border-transparent'
             }`}
           >
-            📋 상세 픽앤밴 현황
+            {currentTurn === 'COMPLETE' ? "📋 밴픽 결과 (DRAFT)" : "📋 상세 픽앤밴 현황"}
           </button>
         </div>
       )}
@@ -266,7 +266,7 @@ export default function DraftRoom() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 items-stretch mb-1.5">
         
         {/* BLUE TEAM PICKS (Col Left: 3 spans) */}
-        {(!isMobile || (currentTurn !== 'COMPLETE' && mobileTab === 'STATUS')) && (
+        {(!isMobile || mobileTab === 'STATUS') && (
           <div className="lg:col-span-3 flex flex-col justify-between h-full min-h-0 bg-background/50 border border-border p-2 rounded-xl shadow-inner shadow-black/20">
             <div className="space-y-1.5 overflow-y-auto pr-1 flex-1 xl:max-h-[calc(100vh-270px)] scrollbar-thin">
               <div className="flex justify-between items-center text-[10px] font-mono font-bold text-primary tracking-wider mb-1 uppercase drop-shadow-[0_0_2px_rgba(var(--primary),0.5)]">
@@ -333,7 +333,7 @@ export default function DraftRoom() {
         )}
 
         {/* CHAMPION GRID SELECTOR (Col Center: 6 spans) */}
-        {(!isMobile || currentTurn === 'COMPLETE' || mobileTab === 'GRID') && (
+        {(!isMobile || mobileTab === 'GRID') && (
           <div className="lg:col-span-6 flex flex-col justify-between bg-card/30 backdrop-blur-md border border-border p-2.5 sm:p-3.5 rounded-xl h-full min-h-0 shadow-[0_0_20px_rgba(0,0,0,0.3)]">
             
             {currentTurn === 'COMPLETE' ? (
@@ -585,7 +585,7 @@ export default function DraftRoom() {
         )}
 
         {/* RED TEAM PICKS (Col Right: 3 spans) */}
-        {(!isMobile || (currentTurn !== 'COMPLETE' && mobileTab === 'STATUS')) && (
+        {(!isMobile || mobileTab === 'STATUS') && (
           <div className="lg:col-span-3 flex flex-col justify-between h-full min-h-0 bg-background/50 border border-border p-2 rounded-xl shadow-inner shadow-black/20">
             <div className="space-y-1.5 overflow-y-auto pr-1 flex-1 xl:max-h-[calc(100vh-270px)] scrollbar-thin">
               <div className="flex justify-between items-center text-[10px] font-mono font-bold text-destructive tracking-wider mb-1 uppercase drop-shadow-[0_0_2px_rgba(var(--destructive),0.5)]">
