@@ -19,9 +19,7 @@ export default function DraftRoom() {
     draftState,
     selectBan,
     selectPick,
-    completeMatch,
-    completeSetMatch,
-    seriesState
+    completeMatch
   } = useGameStore();
 
   const isMobile = useIsMobile();
@@ -141,7 +139,7 @@ export default function DraftRoom() {
     const result = simulateLoLMatch(blueTeam, blueRoster, redTeam, redRoster);
 
     // Dispatch victory results and standings update to the Zustand store
-    completeSetMatch(result);
+    completeMatch(result);
   };
 
   const activeTurnColorClass = isPlayerTurn 
@@ -171,16 +169,11 @@ export default function DraftRoom() {
         {/* Current status display */}
         <div className="text-center min-w-0">
           <div className="inline-flex items-center gap-1 mb-0.5 text-[8px] sm:text-[9px] font-mono tracking-wider uppercase bg-background border border-border px-1.5 py-0.2 rounded-full text-muted-foreground shadow-inner">
-            <Zap size={8} className="text-amber-400 animate-pulse" /> {seriesState ? `${seriesState.boFormat} SET ${seriesState.currentSet} (${seriesState.homeWins}:${seriesState.awayWins})` : 'DRAFT PRO'}
+            <Zap size={8} className="text-amber-400 animate-pulse" /> DRAFT PRO
           </div>
           <p className="text-[10px] sm:text-xs font-bold text-foreground drop-shadow-md truncate">
             {getTurnMessage()}
           </p>
-          {seriesState && seriesState.fearlessPickedChampions.length > 0 && (
-            <p className="text-[8px] font-mono text-rose-400 font-bold uppercase tracking-wider mt-0.5 animate-pulse">
-              🔥 GLOBAL FEARLESS ACTIVE
-            </p>
-          )}
         </div>
 
         {/* Red Side Team info */}
@@ -481,28 +474,6 @@ export default function DraftRoom() {
                   {isPlayerTurn ? '🌟 지금은 감독님의 밴&픽 차례입니다! 원하는 챔피언을 터치하십시오.' : '🔒 상대방 AI 감독이 드래프트 설계 중입니다...'}
                 </div>
 
-                {/* Fearless Banned Champions display list */}
-                {seriesState && seriesState.fearlessPickedChampions.length > 0 && (
-                  <div className="bg-rose-950/15 border border-rose-500/20 p-2 rounded-xl mb-2 shadow-inner">
-                    <p className="text-[8px] font-mono text-rose-400 font-bold uppercase tracking-wider mb-1">
-                      🚫 FEARLESS BANNED CHAMPS ({seriesState.fearlessPickedChampions.length})
-                    </p>
-                    <div className="flex flex-wrap gap-1 max-h-[50px] overflow-y-auto scrollbar-thin">
-                      {seriesState.fearlessPickedChampions.map(champId => {
-                        const champ = getChampionOfId(champId);
-                        return (
-                          <span 
-                            key={`fearless-badge-${champId}`}
-                            className="text-[8px] font-bold px-1.5 py-0.5 bg-rose-500/10 border border-rose-500/25 text-rose-400 rounded-md shadow-sm"
-                          >
-                            {champ ? champ.name.split(' ')[0] : champId}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
                 {/* Lane & Tier Filter Tabs */}
                 <div className="flex flex-wrap gap-1 bg-background p-0.5 sm:p-1 rounded-xl border border-border mb-2 shadow-inner overflow-x-auto scrollbar-none">
                   {([
@@ -536,13 +507,12 @@ export default function DraftRoom() {
                     return champ.lane.includes(roleFilter);
                   }).map(champ => {
                     const isUsed = usedChamps.includes(champ.id);
-                    const isFearlessBanned = seriesState?.fearlessPickedChampions?.includes(champ.id) || false;
                     
                     return (
                       <motion.button
                         id={`btn-champ-card-${champ.id}`}
                         key={champ.id}
-                        disabled={isUsed || isFearlessBanned || !isPlayerTurn}
+                        disabled={isUsed || !isPlayerTurn}
                         onMouseEnter={() => setHoveredChampId(champ.id)}
                         onMouseLeave={() => setHoveredChampId(null)}
                         onClick={() => {
@@ -552,28 +522,20 @@ export default function DraftRoom() {
                             selectPick(champ.id, isPlayerBlue ? 'BLUE' : 'RED');
                           }
                         }}
-                        whileHover={{ scale: (isUsed || isFearlessBanned) ? 1 : 1.03 }}
-                        whileTap={{ scale: (isUsed || isFearlessBanned) ? 1 : 0.97 }}
+                        whileHover={{ scale: isUsed ? 1 : 1.03 }}
+                        whileTap={{ scale: isUsed ? 1 : 0.97 }}
                         className={`p-1.5 rounded-lg border text-center flex flex-col items-center justify-between h-[72px] sm:h-[80px] cursor-pointer transition-all ${
-                          isFearlessBanned
-                            ? 'opacity-40 bg-rose-950/20 border-rose-500/40 text-rose-400 grayscale'
-                            : isUsed 
-                              ? 'opacity-20 bg-background border-border brightness-50 grayscale' 
-                              : isPlayerTurn
-                                ? 'bg-background/60 border-border hover:border-primary hover:bg-primary/5 hover:shadow-[0_0_10px_rgba(var(--primary),0.2)]'
-                                : 'bg-background/20 border-border'
+                          isUsed 
+                            ? 'opacity-20 bg-background border-border brightness-50 grayscale' 
+                            : isPlayerTurn
+                              ? 'bg-background/60 border-border hover:border-primary hover:bg-primary/5 hover:shadow-[0_0_10px_rgba(var(--primary),0.2)]'
+                              : 'bg-background/20 border-border'
                         }`}
                       >
-                        {isFearlessBanned ? (
-                          <span className="text-[7px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/30 px-1 py-0.2 rounded font-mono shadow-[0_0_3px_rgba(239,68,68,0.2)] shrink-0">
-                            FEARLESS
-                          </span>
-                        ) : (
-                          <span className="text-[8px] font-mono bg-background px-1 py-0.2 rounded border border-border text-muted-foreground shadow-inner">
-                            Tier {champ.tier}
-                          </span>
-                        )}
-                        <span className={`font-extrabold text-[10px] truncate w-full mt-0.5 ${isFearlessBanned ? 'text-rose-400/80 line-through' : 'text-foreground'}`}>
+                        <span className="text-[8px] font-mono bg-background px-1 py-0.2 rounded border border-border text-muted-foreground shadow-inner">
+                          Tier {champ.tier}
+                        </span>
+                        <span className="font-extrabold text-[10px] text-foreground truncate w-full mt-0.5">
                           {champ.name.split(' ')[0]}
                         </span>
                         <div className="flex gap-0.5 mt-0.5">

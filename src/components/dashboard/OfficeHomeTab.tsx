@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Match, Team, Email, Standing, SeasonPhase } from '../../types';
+import { Match, Team, Email, Standing } from '../../types';
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -10,51 +10,8 @@ import { LastMatchReport } from '../LastMatchReport';
 import { LeagueTable } from '../LeagueTable';
 import { useIsMobile } from '../../hooks/use-mobile';
 
-const parseDateString = (dateStr: string): number => {
-  const match = dateStr.match(/(\d+)년\s*(\d+)월\s*(\d+)일/);
-  if (match) {
-    const year = parseInt(match[1]);
-    const month = parseInt(match[2]) - 1;
-    const day = parseInt(match[3]);
-    return new Date(year, month, day).getTime();
-  }
-  return 0;
-};
-
-const getEmailTime = (email: Email): number => {
-  const parts = email.id.split('_');
-  const lastPart = parts[parts.length - 1];
-  const ts = parseInt(lastPart);
-  if (!isNaN(ts) && ts > 1000000000000) {
-    return ts;
-  }
-  const parsed = parseDateString(email.date);
-  let offset = 0;
-  if (email.id === 'e1') offset = -2;
-  if (email.id === 'e2') offset = -1;
-  return parsed + offset;
-};
-
-const getMatchTypeName = (type?: string, boFormat?: string) => {
-  const formatSuffix = boFormat ? ` (${boFormat})` : '';
-  switch (type) {
-    case 'SPRING_REGULAR': return `LCK 스프링 정규시즌${formatSuffix}`;
-    case 'SUMMER_REGULAR': return `LCK 서머 정규시즌${formatSuffix}`;
-    case 'SPRING_PLAYOFFS': return `LCK 스프링 플레이오프${formatSuffix}`;
-    case 'SUMMER_PLAYOFFS': return `LCK 서머 플레이오프${formatSuffix}`;
-    case 'MSI': return `Mid-Season Invitational (MSI)${formatSuffix}`;
-    case 'WORLDS': return `LoL World Championship (월즈)${formatSuffix}`;
-    default: return `공식 경기${formatSuffix}`;
-  }
-};
-
 interface OfficeHomeTabProps {
   schedule: Match[];
-  playoffsMatches?: Match[];
-  msiMatches?: Match[];
-  worldsMatches?: Match[];
-  activeMatch?: Match | null;
-  seasonPhase: SeasonPhase;
   currentWeek: number;
   playerTeamId: string;
   teams: Team[];
@@ -71,11 +28,6 @@ interface OfficeHomeTabProps {
 
 export const OfficeHomeTab: React.FC<OfficeHomeTabProps> = ({
   schedule,
-  playoffsMatches = [],
-  msiMatches = [],
-  worldsMatches = [],
-  activeMatch = null,
-  seasonPhase,
   currentWeek,
   playerTeamId,
   teams,
@@ -139,62 +91,46 @@ export const OfficeHomeTab: React.FC<OfficeHomeTabProps> = ({
               <Calendar size={16} /> UPCOMING MATCH
             </h3>
             <div className="flex-1 min-h-0 flex flex-col justify-center gap-3">
-              {(() => {
-                const getTeamNameSafe = (id: string) => (id === 'TBD' ? '결정 예정 (TBD)' : teams.find(t => t.id === id)?.name || id);
-                const getTeamLogoSafe = (id: string) => (id === 'TBD' ? '❓' : teams.find(t => t.id === id)?.logo || '❓');
-
-                const nextMatch = activeMatch || (() => {
-                  if (seasonPhase === 'SPRING_REGULAR' || seasonPhase === 'SUMMER_REGULAR') {
-                    return schedule.find(m => m.week === currentWeek && !m.played && (m.homeTeamId === playerTeamId || m.awayTeamId === playerTeamId));
-                  } else {
-                    const bracketMatches = seasonPhase === 'MSI' ? msiMatches : (seasonPhase === 'WORLDS' ? worldsMatches : playoffsMatches);
-                    return (bracketMatches || []).find(m => !m.played && (m.homeTeamId === playerTeamId || m.awayTeamId === playerTeamId));
-                  }
-                })();
-
-                if (!nextMatch) {
+              {schedule.filter(m => m.week === currentWeek && (m.homeTeamId === playerTeamId || m.awayTeamId === playerTeamId)).length > 0 ? (
+                schedule.filter(m => m.week === currentWeek && (m.homeTeamId === playerTeamId || m.awayTeamId === playerTeamId)).map(match => {
+                  const t1 = teams.find(t => t.id === match.homeTeamId);
+                  const t2 = teams.find(t => t.id === match.awayTeamId);
+                  const isHome = match.homeTeamId === playerTeamId;
+                  const opponent = isHome ? t2 : t1;
+                  const winRateProb = isHome ? 58 : 42; 
+                  
                   return (
-                    <div className="flex-1 flex flex-col items-center justify-center text-xs text-muted-foreground/40 border border-border border-dashed rounded-xl bg-background/30 font-mono gap-2">
-                      이번 주 공식 일정이 없습니다.
+                    <div key={match.id} className="flex flex-col h-full justify-around items-center">
+                      <div className="flex w-full justify-between items-center px-4">
+                        <div className="flex flex-col items-center gap-3 w-2/5">
+                          <span className="text-7xl drop-shadow-2xl">{myTeam.logo}</span>
+                          <span className="font-black text-lg tracking-tighter text-foreground">{myTeam.name}</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-2 w-1/5">
+                          <span className="text-2xl font-black font-mono text-muted-foreground/80 italic">VS</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-3 w-2/5">
+                          <span className="text-7xl drop-shadow-2xl">{opponent?.logo}</span>
+                          <span className="font-black text-lg tracking-tighter text-foreground">{opponent?.name}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="w-full mt-6 bg-background/50 border border-border p-4 rounded-xl flex flex-col justify-center gap-2 z-10">
+                        <div className="flex justify-between text-[10px] font-mono font-bold">
+                          <span className="text-emerald-400">WIN PROBABILITY</span>
+                          <span>{winRateProb}%</span>
+                        </div>
+                        <Progress value={winRateProb} className="h-2 bg-muted/60" />
+                        <p className="text-[10px] text-muted-foreground mt-1 text-center font-sans tracking-tight">전술 시뮬레이션 결과, 상대팀과의 주도권 싸움이 예상됩니다.</p>
+                      </div>
                     </div>
                   );
-                }
-
-                const isHome = nextMatch.homeTeamId === playerTeamId;
-                const opponentName = isHome ? getTeamNameSafe(nextMatch.awayTeamId) : getTeamNameSafe(nextMatch.homeTeamId);
-                const opponentLogo = isHome ? getTeamLogoSafe(nextMatch.awayTeamId) : getTeamLogoSafe(nextMatch.homeTeamId);
-                const winRateProb = isHome ? 58 : 42;
-
-                return (
-                  <div key={nextMatch.id} className="flex flex-col h-full justify-around items-center">
-                    <div className="text-[10px] font-bold text-muted-foreground bg-muted/60 border border-border px-2 py-0.5 rounded shadow-sm mb-2 shrink-0">
-                      {getMatchTypeName(nextMatch.matchType || seasonPhase, nextMatch.boFormat)}
-                    </div>
-                    <div className="flex w-full justify-between items-center px-4">
-                      <div className="flex flex-col items-center gap-3 w-2/5">
-                        <span className="text-7xl drop-shadow-2xl">{myTeam.logo}</span>
-                        <span className="font-black text-lg tracking-tighter text-foreground">{myTeam.name}</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-2 w-1/5">
-                        <span className="text-2xl font-black font-mono text-muted-foreground/80 italic">VS</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-3 w-2/5">
-                        <span className="text-7xl drop-shadow-2xl">{opponentLogo}</span>
-                        <span className="font-black text-lg tracking-tighter text-foreground">{opponentName}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="w-full mt-6 bg-background/50 border border-border p-4 rounded-xl flex flex-col justify-center gap-2 z-10">
-                      <div className="flex justify-between text-[10px] font-mono font-bold">
-                        <span className="text-emerald-400">WIN PROBABILITY</span>
-                        <span>{winRateProb}%</span>
-                      </div>
-                      <Progress value={winRateProb} className="h-2 bg-muted/60" />
-                      <p className="text-[10px] text-muted-foreground mt-1 text-center font-sans tracking-tight">전술 시뮬레이션 결과, 상대팀과의 주도권 싸움이 예상됩니다.</p>
-                    </div>
-                  </div>
-                );
-              })()}
+                })
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-xs text-muted-foreground/40 border border-border border-dashed rounded-xl bg-background/30 font-mono gap-2">
+                  이번 주 공식 일정이 없습니다.
+                </div>
+              )}
             </div>
           </Card>
         </div>
@@ -231,7 +167,7 @@ export const OfficeHomeTab: React.FC<OfficeHomeTabProps> = ({
             </h3>
             <div className="flex-1 overflow-hidden flex flex-col relative min-h-0">
               <div className="flex-1 overflow-y-auto scrollbar-thin pr-2 flex flex-col gap-3 py-1">
-                {[...emails].sort((a, b) => getEmailTime(b) - getEmailTime(a)).map(email => (
+                {emails.slice().reverse().map(email => (
                   <button 
                     key={email.id}
                     onClick={() => {

@@ -76,7 +76,6 @@ export const createCommonSlice: StateCreator<
   playoffsMatches: [],
   msiMatches: [],
   worldsMatches: [],
-  seriesState: null,
   selectedRegionStanding: 'LCK',
 
   tactics: {
@@ -125,7 +124,6 @@ export const createCommonSlice: StateCreator<
       playoffsMatches: [],
       msiMatches: [],
       worldsMatches: [],
-      seriesState: null,
       selectedRegionStanding: 'LCK',
       emails: [...INITIAL_EMAILS],
       currentDate: new Date(2026, 0, 1),

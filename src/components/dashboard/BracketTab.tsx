@@ -15,7 +15,6 @@ interface BracketTabProps {
   getTeamName: (id?: string) => string;
   getTeamLogo: (id?: string) => string;
   simulateBracketMatchDirectly: (matchId: string) => void;
-  simulateRemainingTournament: () => void;
 }
 
 export const BracketTab: React.FC<BracketTabProps> = ({
@@ -28,61 +27,9 @@ export const BracketTab: React.FC<BracketTabProps> = ({
   getTeamName,
   getTeamLogo,
   simulateBracketMatchDirectly,
-  simulateRemainingTournament,
 }) => {
   const getTeamNameSafe = (id: string) => (id === 'TBD' ? '결정 예정 (TBD)' : getTeamName(id));
   const getTeamLogoSafe = (id: string) => (id === 'TBD' ? '⏳' : getTeamLogo(id));
-
-  const [activeSwissRound, setActiveSwissRound] = React.useState<number>(1);
-
-  const rounds = [1, 2, 3, 4, 5];
-  const availableRounds = rounds.filter(r => worldsMatches.some(m => m.id.startsWith(`worlds_swiss_r${r}_`)));
-  const latestRound = availableRounds.length > 0 ? Math.max(...availableRounds) : 1;
-
-  React.useEffect(() => {
-    if (latestRound > 1) {
-      setActiveSwissRound(latestRound);
-    }
-  }, [latestRound]);
-
-  const getSwissRecords = () => {
-    const records: Record<string, { wins: number; losses: number }> = {};
-    worldsMatches.forEach(m => {
-      if (m.id.startsWith('worlds_swiss_')) {
-        if (m.homeTeamId && m.homeTeamId !== 'TBD') {
-          records[m.homeTeamId] = { wins: 0, losses: 0 };
-        }
-        if (m.awayTeamId && m.awayTeamId !== 'TBD') {
-          records[m.awayTeamId] = { wins: 0, losses: 0 };
-        }
-      }
-    });
-    worldsMatches.forEach(m => {
-      if (m.id.startsWith('worlds_swiss_') && m.played && m.winnerId) {
-        const loserId = m.winnerId === m.homeTeamId ? m.awayTeamId : m.homeTeamId;
-        if (records[m.winnerId]) {
-          records[m.winnerId].wins++;
-        }
-        if (loserId && records[loserId]) {
-          records[loserId].losses++;
-        }
-      }
-    });
-    return records;
-  };
-
-  const swissRecords = getSwissRecords();
-  const sortedSwissTeams = Object.keys(swissRecords)
-    .map(teamId => ({
-      teamId,
-      wins: swissRecords[teamId].wins,
-      losses: swissRecords[teamId].losses,
-    }))
-    .sort((a, b) => b.wins - a.wins || a.losses - b.losses);
-
-  const getRoundMatches = (roundNum: number) => {
-    return worldsMatches.filter(m => m.id.startsWith(`worlds_swiss_r${roundNum}_`));
-  };
 
   const renderMatchCard = (m: Match, title: string) => {
     if (!m) return null;
@@ -175,32 +122,6 @@ export const BracketTab: React.FC<BracketTabProps> = ({
       </CardHeader>
 
       <CardContent className="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 pb-6">
-        {(() => {
-          const isPlayerStillInTournament = activeMatches.some(
-            m => !m.played && (m.homeTeamId === playerTeamId || m.awayTeamId === playerTeamId)
-          );
-
-          if (!isPlayerStillInTournament && activeMatches.length > 0) {
-            return (
-              <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-                <div>
-                  <span className="text-[10px] text-amber-400 font-mono font-black uppercase tracking-wider block">구단 토너먼트 여정 종결됨</span>
-                  <p className="text-xs text-muted-foreground/90 mt-0.5 leading-relaxed">
-                    현재 구단은 이번 토너먼트에 참가하지 못했거나 플레이 중 탈락하였습니다. 남은 AI 대진들을 일괄 시뮬레이션하고 다음 시즌(비시즌 스토브리그)으로 스킵 진행할 수 있습니다.
-                  </p>
-                </div>
-                <Button
-                  onClick={simulateRemainingTournament}
-                  className="bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.2)] shrink-0 transition-transform hover:scale-105 active:scale-95"
-                >
-                  🚀 남은 토너먼트 일괄 진행 (Skip)
-                </Button>
-              </div>
-            );
-          }
-          return null;
-        })()}
-
         {activeMatches.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground/80">
             <Trophy size={48} className="opacity-25 mb-4 animate-bounce text-amber-500" />
@@ -362,109 +283,6 @@ export const BracketTab: React.FC<BracketTabProps> = ({
 
             if (seasonPhase === 'WORLDS') {
               const qf1 = worldsMatches.find(m => m.id === 'worlds_qf1');
-              
-              if (!qf1) {
-                // Render Swiss Stage Dashboard
-                return (
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <span className="bg-rose-500/10 text-rose-455 border border-rose-500/30 text-xs font-black px-4 py-1.5 rounded-full inline-block">
-                        월드 챔피언십 스위스 스테이지 (Worlds Swiss Stage - 3승 진출 / 3패 탈락)
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                      {/* Left side: Swiss standings table (5 cols) */}
-                      <div className="lg:col-span-5 bg-card/45 border border-border p-4 rounded-2xl shadow space-y-3">
-                        <h4 className="text-xs font-black text-rose-455 border-b border-border pb-1.5 uppercase tracking-wider text-center">
-                          스위스 스테이지 현황판 (Swiss Standings)
-                        </h4>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-xs text-left">
-                            <thead>
-                              <tr className="border-b border-border text-[9px] font-mono uppercase text-muted-foreground">
-                                <th className="py-2 pl-2">순위</th>
-                                <th className="py-2">구단</th>
-                                <th className="py-2 text-center">승-패</th>
-                                <th className="py-2 pr-2 text-right">상태</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border/40">
-                              {sortedSwissTeams.map((entry, index) => {
-                                const team = teams.find(t => t.id === entry.teamId);
-                                const isPlayer = entry.teamId === playerTeamId;
-                                const status = entry.wins >= 3 
-                                  ? 'QUALIFIED' 
-                                  : entry.losses >= 3 
-                                    ? 'ELIMINATED' 
-                                    : 'ACTIVE';
-
-                                return (
-                                  <tr key={entry.teamId} className={`hover:bg-muted/10 transition-colors ${isPlayer ? 'bg-primary/5' : ''}`}>
-                                    <td className="py-2.5 pl-2 font-mono font-bold">{index + 1}</td>
-                                    <td className="py-2.5 font-bold flex items-center gap-1.5 min-w-0">
-                                      <span className="text-base shrink-0">{team?.logo || '🛡️'}</span>
-                                      <span className="truncate max-w-[100px]">{team?.name || entry.teamId}</span>
-                                      {isPlayer && <Badge className="text-[7px] px-1 py-0 bg-primary/20 text-primary border border-primary/30 shrink-0">MY</Badge>}
-                                    </td>
-                                    <td className="py-2.5 text-center font-mono font-black text-white">{entry.wins}W - {entry.losses}L</td>
-                                    <td className="py-2.5 pr-2 text-right">
-                                      {status === 'QUALIFIED' && (
-                                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/25 text-emerald-400">8강 진출</span>
-                                      )}
-                                      {status === 'ELIMINATED' && (
-                                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground">탈락</span>
-                                      )}
-                                      {status === 'ACTIVE' && (
-                                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/25 text-blue-400">경합 중</span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-
-                      {/* Right side: Round-by-round pairings (7 cols) */}
-                      <div className="lg:col-span-7 bg-card/45 border border-border p-4 rounded-2xl shadow space-y-4">
-                        <div className="flex justify-between items-center border-b border-border pb-1.5">
-                          <h4 className="text-xs font-black text-rose-455 uppercase tracking-wider">
-                            라운드별 매치 대진 (Round Pairings)
-                          </h4>
-                          <div className="flex gap-1 bg-background p-0.5 border border-border rounded text-[9px] font-mono">
-                            {availableRounds.map(r => (
-                              <button
-                                key={`swiss-rd-tab-${r}`}
-                                onClick={() => setActiveSwissRound(r)}
-                                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
-                                  activeSwissRound === r 
-                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 font-black' 
-                                    : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                              >
-                                R{r}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-3 overflow-y-auto max-h-[400px] pr-1 scrollbar-thin">
-                          {getRoundMatches(activeSwissRound).length === 0 ? (
-                            <div className="text-center py-10 text-muted-foreground/60 text-xs font-mono">
-                              대진 생성 대기 중 (WAITING FOR DRAW...)
-                            </div>
-                          ) : (
-                            getRoundMatches(activeSwissRound).map((m, idx) => renderMatchCard(m, `스위스 R${activeSwissRound} - M${idx + 1}`))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
               const qf2 = worldsMatches.find(m => m.id === 'worlds_qf2');
               const qf3 = worldsMatches.find(m => m.id === 'worlds_qf3');
               const qf4 = worldsMatches.find(m => m.id === 'worlds_qf4');

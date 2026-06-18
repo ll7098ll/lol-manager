@@ -4,6 +4,72 @@ import { Standing, Match, Player, Email } from '../../types';
 import { ALL_TEAMS, generateLckSchedule } from '../storeUtils';
 import { formatCurrency } from '../../utils/format';
 
+const autoFillTeamRoster = (players: Player[], teamId: string): Player[] => {
+  if (teamId === 'FA') return players;
+  
+  let updatedPlayers = [...players];
+  const teamPlayers = updatedPlayers.filter(p => p.teamId === teamId);
+  
+  if (teamPlayers.length >= 5) return updatedPlayers;
+  
+  const neededCount = 5 - teamPlayers.length;
+  const positions: ('TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT')[] = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
+  
+  // Find which roles are missing in the team
+  const missingRoles = positions.filter(role => !updatedPlayers.some(p => p.teamId === teamId && p.role === role));
+  
+  for (let i = 0; i < neededCount; i++) {
+    const roleToFill = missingRoles[i] || positions[i % 5];
+    
+    // 1. Try to find a Free Agent with the same role
+    let faIdx = updatedPlayers.findIndex(p => p.teamId === 'FA' && p.role === roleToFill);
+    
+    // 2. If not found, try to find any Free Agent
+    if (faIdx === -1) {
+      faIdx = updatedPlayers.findIndex(p => p.teamId === 'FA');
+    }
+    
+    if (faIdx !== -1) {
+      updatedPlayers[faIdx] = {
+        ...updatedPlayers[faIdx],
+        teamId: teamId,
+        contractYears: 1,
+        condition: 100
+      };
+    } else {
+      const names = ['김철수', '이영희', '박민수', '최성진', '정하늘', '조재현'];
+      const summNames = ['Substitute', 'Rookie', 'Shadow', 'Ghost', 'Nova'];
+      const newPlayer: Player = {
+        id: `auto_fill_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        name: names[Math.floor(Math.random() * names.length)],
+        summonerName: `${summNames[Math.floor(Math.random() * summNames.length)]}_${Math.floor(Math.random() * 90 + 10)}`,
+        role: roleToFill,
+        teamId: teamId,
+        age: 19,
+        contractYears: 1,
+        salary: 15000,
+        lanePhase: 65 + Math.floor(Math.random() * 15),
+        mechanics: 65 + Math.floor(Math.random() * 15),
+        macro: 65 + Math.floor(Math.random() * 15),
+        teamfight: 65 + Math.floor(Math.random() * 15),
+        shotcalling: 55 + Math.floor(Math.random() * 15),
+        mental: 65 + Math.floor(Math.random() * 15),
+        consistency: 60 + Math.floor(Math.random() * 15),
+        championPool: { azir: 5, leesin: 5, ksante: 5 },
+        condition: 100,
+        form: 'NORMAL',
+        morale: 80,
+        potential: 80,
+        playstylePreference: 'BALANCED',
+        energy: 100
+      };
+      updatedPlayers.push(newPlayer);
+    }
+  }
+  
+  return updatedPlayers;
+};
+
 export const createFinanceSlice: StateCreator<
   GameStore,
   [],
@@ -18,6 +84,7 @@ export const createFinanceSlice: StateCreator<
     | 'startNextSeason'
     | 'setPlayerPlaystyle'
     | 'hireAcademyRookie'
+    | 'tradePlayers'
   >
 > = (set, get) => ({
   buyPlayer: (playerId) => {
@@ -71,6 +138,8 @@ export const createFinanceSlice: StateCreator<
       return p;
     });
 
+    const finalPlayers = autoFillTeamRoster(newPlayers, sellingTeamId);
+
     const textDate = `${get().currentDate.getFullYear()}년 ${get().currentDate.getMonth() + 1}월 ${get().currentDate.getDate()}일`;
     const buyerTeamName = myTeam.name;
     const sellerTeamName = sellingTeamId === 'FA' ? '자유계약 신분' : (teams.find(t => t.id === sellingTeamId)?.name || '기존 구단');
@@ -86,7 +155,7 @@ export const createFinanceSlice: StateCreator<
 
     set({
       teams: newTeams,
-      players: newPlayers,
+      players: finalPlayers,
       emails: [newsEmail, ...get().emails]
     });
 
@@ -259,6 +328,8 @@ export const createFinanceSlice: StateCreator<
       return p;
     });
 
+    const finalPlayers = autoFillTeamRoster(newPlayers, sellingTeamId);
+
     const textDate = `${get().currentDate.getFullYear()}년 ${get().currentDate.getMonth() + 1}월 ${get().currentDate.getDate()}일`;
     const newsTitle = isRenewal 
       ? `[계약 갱신 성공] ${player.summonerName} 선수가 다년 재계약서에 서명했습니다!`
@@ -280,7 +351,7 @@ export const createFinanceSlice: StateCreator<
 
     set({
       teams: newTeams,
-      players: newPlayers,
+      players: finalPlayers,
       emails: [newsEmail, ...get().emails]
     });
 
@@ -513,5 +584,104 @@ export const createFinanceSlice: StateCreator<
     set({ emails: [congratsMail, ...get().emails] });
 
     return { success: true, message: `[${rookie.summonerName}] 연습생을 영입하여 1군 아카데미 전력으로 등록했습니다!` };
+  },
+
+  tradePlayers: (myPlayerId, opponentPlayerId) => {
+    const { players, teams, playerTeamId, startingLineup } = get();
+    const myPlayer = players.find(p => p.id === myPlayerId && p.teamId === playerTeamId);
+    const oppPlayer = players.find(p => p.id === opponentPlayerId);
+
+    if (!myPlayer || !oppPlayer) {
+      return { success: false, message: '선수를 찾을 수 없습니다.' };
+    }
+
+    if (oppPlayer.teamId === playerTeamId) {
+      return { success: false, message: '이미 소속되어 있는 선수입니다.' };
+    }
+
+    if (myPlayer.role !== oppPlayer.role) {
+      return { success: false, message: '서로 다른 포지션의 선수는 1:1 트레이드할 수 없습니다.' };
+    }
+
+    const isStarting = Object.values(startingLineup).includes(myPlayerId);
+
+    const getOvr = (p: Player) => Math.round((p.lanePhase + p.mechanics + p.macro + p.teamfight) / 4);
+    
+    const myOvr = getOvr(myPlayer);
+    const oppOvr = getOvr(oppPlayer);
+    
+    const myPotential = myPlayer.potential || 80;
+    const oppPotential = oppPlayer.potential || 80;
+
+    const myValue = myOvr * 1.0 + myPotential * 0.2 + (30 - myPlayer.age) * 1.5;
+    const oppValue = oppOvr * 1.0 + oppPotential * 0.2 + (30 - oppPlayer.age) * 1.5;
+
+    if (myValue < oppValue * 0.95) {
+      const diff = Math.round(oppValue - myValue);
+      return { 
+        success: false, 
+        message: `상대 구단이 제안을 거절했습니다.\n(제안 가치 부족. 가치 격차: ${diff > 0 ? diff : 0}점)\nAI 피드백: "우리는 더 높은 기량이나 미래 가치를 지닌 선수를 원합니다."` 
+      };
+    }
+
+    const sellingTeamId = oppPlayer.teamId;
+
+    const newPlayers = players.map(p => {
+      if (p.id === myPlayerId) {
+        return {
+          ...p,
+          teamId: sellingTeamId,
+          contractYears: Math.max(1, p.contractYears),
+          condition: 100
+        };
+      }
+      if (p.id === opponentPlayerId) {
+        return {
+          ...p,
+          teamId: playerTeamId!,
+          contractYears: Math.max(1, p.contractYears),
+          condition: 100
+        };
+      }
+      return p;
+    });
+
+    let finalPlayers = autoFillTeamRoster(newPlayers, sellingTeamId);
+    finalPlayers = autoFillTeamRoster(finalPlayers, playerTeamId!);
+
+    const newLineup = { ...startingLineup };
+    if (isStarting) {
+      const assignedRole = (Object.keys(startingLineup) as Array<'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT'>).find(
+        key => startingLineup[key] === myPlayerId
+      );
+      if (assignedRole) {
+        newLineup[assignedRole] = opponentPlayerId;
+      }
+    }
+
+    const textDate = `${get().currentDate.getFullYear()}년 ${get().currentDate.getMonth() + 1}월 ${get().currentDate.getDate()}일`;
+    const oppTeamName = sellingTeamId === 'FA' ? '자유계약 신분' : (teams.find(t => t.id === sellingTeamId)?.name || '기존 구단');
+    const myTeamName = teams.find(t => t.id === playerTeamId)?.name || '우리 구단';
+
+    const newsEmail: Email = {
+      id: `trade_${Date.now()}`,
+      sender: 'LCK 공식 협회',
+      title: `[트레이드 오피셜] ${myTeamName} - ${oppTeamName}, 1:1 트레이드 성사!`,
+      content: `충격적인 트레이드 단행! ${myTeamName} 구단과 ${oppTeamName} 구단이 [${myPlayer.summonerName}] 선수와 [${oppPlayer.summonerName}] 선수의 1:1 이적 트레이드안에 정식 합의했습니다. 양 선수는 즉시 소속팀을 교환하였으며, 주전 라인업에 있던 선수는 교환된 신임 선수가 즉시 선발 슬롯을 승계하게 됩니다.`,
+      date: textDate,
+      read: false,
+      type: 'NEWS'
+    };
+
+    set({
+      players: finalPlayers,
+      startingLineup: newLineup,
+      emails: [newsEmail, ...get().emails]
+    });
+
+    return { 
+      success: true, 
+      message: `${myPlayer.summonerName} 선수와 ${oppPlayer.summonerName} 선수의 1:1 트레이드가 성사되었습니다!` 
+    };
   }
 });

@@ -25,11 +25,11 @@ const findChamp = (id: string): Champion | undefined => {
 // ============================================================
 const getChampionMasteryBonus = (player: Player, championId: string): number => {
   const mastery = player.championPool[championId];
-  if (mastery === undefined) return -18; // Champion NOT in pool: severe penalty
-  if (mastery >= 10) return 12;
-  if (mastery >= 7) return 6;
+  if (mastery === undefined) return -8; // Champion NOT in pool: severe penalty
+  if (mastery >= 10) return 6;
+  if (mastery >= 7) return 3;
   if (mastery >= 4) return 0;
-  return -8; // Very low mastery
+  return -4; // Very low mastery
 };
 
 // ============================================================
@@ -37,12 +37,12 @@ const getChampionMasteryBonus = (player: Player, championId: string): number => 
 // ============================================================
 const getChampionTierBonus = (championId: string): number => {
   const champ = findChamp(championId);
-  if (!champ) return -12;
+  if (!champ) return -6;
   switch (champ.tier) {
-    case 1: return 6;
+    case 1: return 3;
     case 2: return 0;
-    case 3: return -6;
-    default: return -12; // tier 4+
+    case 3: return -3;
+    default: return -6; // tier 4+
   }
 };
 
@@ -185,8 +185,6 @@ export function simulateLoLMatch(
   const awayMasteryBonuses: Record<string, number> = {};
   const homeTierBonuses: Record<string, number> = {};
   const awayTierBonuses: Record<string, number> = {};
-  const homeLaneCounters: Record<string, number> = {};
-  const awayLaneCounters: Record<string, number> = {};
   const playerRoleAndTeam: Record<string, { role: string; isHome: boolean }> = {};
 
   roles.forEach(role => {
@@ -196,19 +194,6 @@ export function simulateLoLMatch(
     awayMasteryBonuses[role] = getChampionMasteryBonus(aEntry.player, aEntry.championId);
     homeTierBonuses[role] = getChampionTierBonus(hEntry.championId);
     awayTierBonuses[role] = getChampionTierBonus(aEntry.championId);
-
-    homeLaneCounters[role] = 0;
-    awayLaneCounters[role] = 0;
-    const hChamp = findChamp(hEntry.championId);
-    const aChamp = findChamp(aEntry.championId);
-    if (hChamp && aChamp) {
-      if (hChamp.counterIds.includes(aEntry.championId)) {
-        homeLaneCounters[role] = 5;
-      }
-      if (aChamp.counterIds.includes(hEntry.championId)) {
-        awayLaneCounters[role] = 5;
-      }
-    }
 
     if (hEntry?.player) {
       playerRoleAndTeam[hEntry.player.id] = { role, isHome: true };
@@ -277,10 +262,10 @@ export function simulateLoLMatch(
 
       if (hChamp && aChamp) {
         if (hChamp.counterIds.includes(aChamp.id)) {
-          homeTotalCounter += 2.0;
+          homeTotalCounter += 1.5;
         }
         if (aChamp.counterIds.includes(hChamp.id)) {
-          awayTotalCounter += 2.0;
+          awayTotalCounter += 1.5;
         }
       }
     });
@@ -294,12 +279,12 @@ export function simulateLoLMatch(
 
       if (hChamp) {
         hChamp.synergyIds.forEach(synId => {
-          if (homeChamps.includes(synId)) homeTotalSynergy += 1.5;
+          if (homeChamps.includes(synId)) homeTotalSynergy += 0.8;
         });
       }
       if (aChamp) {
         aChamp.synergyIds.forEach(synId => {
-          if (awayChamps.includes(synId)) awayTotalSynergy += 1.5;
+          if (awayChamps.includes(synId)) awayTotalSynergy += 0.8;
         });
       }
     });
@@ -344,8 +329,6 @@ export function simulateLoLMatch(
   let awayBarons = 0;
   let homeTowers = 0;
   let awayTowers = 0;
-  let homeMomentum = 0;
-  let awayMomentum = 0;
 
   // Track consecutive kills without dying for bounties (LoL system!)
   const homeKillstreaks: Record<string, number> = { TOP: 0, JUNGLE: 0, MID: 0, ADC: 0, SUPPORT: 0 };
@@ -359,8 +342,6 @@ export function simulateLoLMatch(
   ) => {
     if (team === 'HOME') {
       homeKills++;
-      homeMomentum = Math.min(homeMomentum + 1.5, 12);
-      awayMomentum = Math.max(0, awayMomentum - 0.8);
       
       // Calculate bounty gold
       let killGold = 300;
@@ -392,8 +373,6 @@ export function simulateLoLMatch(
       }
     } else {
       awayKills++;
-      awayMomentum = Math.min(awayMomentum + 1.5, 12);
-      homeMomentum = Math.max(0, homeMomentum - 0.8);
       
       let killGold = 300;
       let shutdownBonus = 0;
@@ -499,21 +478,18 @@ export function simulateLoLMatch(
 
     let champMasteryBonus = 0;
     let champTierBonus = 0;
-    let laneCounterBonus = 0;
     const mapping = playerRoleAndTeam[p.id];
     if (mapping) {
       if (mapping.isHome) {
         champMasteryBonus = homeMasteryBonuses[mapping.role] || 0;
         champTierBonus = homeTierBonuses[mapping.role] || 0;
-        laneCounterBonus = homeLaneCounters[mapping.role] || 0;
       } else {
         champMasteryBonus = awayMasteryBonuses[mapping.role] || 0;
         champTierBonus = awayTierBonuses[mapping.role] || 0;
-        laneCounterBonus = awayLaneCounters[mapping.role] || 0;
       }
     }
 
-    return (baseVal * condMult * aceMultiplier) + bonus + moraleBonus + playstyleBonus + energyPenalty + difficultyBonus + roll + sideBonus + adaptationBonus + seriesFatiguePenalty + champMasteryBonus + champTierBonus + laneCounterBonus;
+    return (baseVal * condMult * aceMultiplier) + bonus + moraleBonus + playstyleBonus + energyPenalty + difficultyBonus + roll + sideBonus + adaptationBonus + seriesFatiguePenalty + champMasteryBonus + champTierBonus;
   };
 
   // Dampen gold lead scaling so early leads don't create mathematical lockouts
@@ -561,10 +537,6 @@ export function simulateLoLMatch(
   let minute = 1;
 
   while (minute <= 40 && !gameFinished) {
-    // Decay momentum
-    homeMomentum = Math.max(0, homeMomentum - 1.2);
-    awayMomentum = Math.max(0, awayMomentum - 1.2);
-
     // Generate passive gold & CS & Vision Score
     roles.forEach(role => {
       // Passive CS growth
@@ -590,21 +562,6 @@ export function simulateLoLMatch(
     // Sync team total gold
     homeGold = roles.reduce((total, r) => total + homeStats[r].gold, 0) + (homeTowers * 500) + (homeDrakes * 150);
     awayGold = roles.reduce((total, r) => total + awayStats[r].gold, 0) + (awayTowers * 500) + (awayDrakes * 150);
-
-    // Calculate Comeback Buffs & Throw Risks based on current gold difference
-    const goldDiff = homeGold - awayGold;
-    let homeThrowRisk = 0;
-    let awayComeback = 0;
-    let awayThrowRisk = 0;
-    let homeComeback = 0;
-
-    if (goldDiff > 3000) {
-      homeThrowRisk = Math.min((goldDiff - 3000) / 450, 10);
-      awayComeback = Math.min((goldDiff - 3000) / 550, 8);
-    } else if (goldDiff < -3000) {
-      awayThrowRisk = Math.min((-goldDiff - 3000) / 450, 10);
-      homeComeback = Math.min((-goldDiff - 3000) / 550, 8);
-    }
 
     // Phase 1: Early/Laning Phase (Minutes 1 - 14)
     if (minute <= 14) {
@@ -639,8 +596,8 @@ export function simulateLoLMatch(
         const focusBonusHome = (homeTactics?.teamFocusRole === targetRole) ? 4 : 0;
         const focusBonusAway = (awayTactics?.teamFocusRole === targetRole) ? 4 : 0;
 
-        const hSkill = getDicedStat(hPlayer, 'lanePhase', focusBonusHome);
-        const aSkill = getDicedStat(aPlayer, 'lanePhase', focusBonusAway);
+        const hSkill = getDicedStat(hPlayer, 'lanePhase', draftBonuses.homeCounter + focusBonusHome);
+        const aSkill = getDicedStat(aPlayer, 'lanePhase', draftBonuses.awayCounter + focusBonusAway);
 
         const diff = hSkill - aSkill;
 
@@ -787,8 +744,6 @@ export function simulateLoLMatch(
         const aControl = getDicedStat(awayRoster.JUNGLE.player, 'macro') + getDicedStat(awayRoster.MID.player, 'shotcalling') * 0.5 + (draftBonuses.awaySynergy * 3);
 
         if (hControl >= aControl) {
-          homeMomentum = Math.min(homeMomentum + 3.0, 12);
-          awayMomentum = Math.max(0, awayMomentum - 1.5);
           if (minute === 8) {
             homeTowers += 1;
             homeGold += 600;
@@ -798,8 +753,6 @@ export function simulateLoLMatch(
             log.push(`${minute}분: [오브젝트] ${homeTeam.name}이 용 둥지를 선점하며 첫 번째 원소 드래곤을 사냥 완료합니다.`);
           }
         } else {
-          awayMomentum = Math.min(awayMomentum + 3.0, 12);
-          homeMomentum = Math.max(0, homeMomentum - 1.5);
           if (minute === 8) {
             awayTowers += 1;
             awayGold += 600;
@@ -821,14 +774,10 @@ export function simulateLoLMatch(
         if (hMacro - aMacro > 10) {
           homeTowers++;
           homeGold += 500;
-          homeMomentum = Math.min(homeMomentum + 2.0, 12);
-          awayMomentum = Math.max(0, awayMomentum - 1.0);
           log.push(`${minute}분: [포탑 파괴] ${homeTeam.name}이 맵 전반의 훌륭한 라인 스왑 브리핑 운영으로 상대 외곽 포탑을 철거합니다.`);
         } else if (aMacro - hMacro > 10) {
           awayTowers++;
           awayGold += 500;
-          awayMomentum = Math.min(awayMomentum + 2.0, 12);
-          homeMomentum = Math.max(0, homeMomentum - 1.0);
           log.push(`${minute}분: [포탑 파괴] 운영의 정밀함에서 밀려 ${awayTeam.name}의 돌파형 사이드 푸시에 아군 타워를 헌납합니다.`);
         }
       }
@@ -850,29 +799,11 @@ export function simulateLoLMatch(
           log.push(`${minute}분: [⚡ 방심] 글로벌 골드가 대거 앞서던 ${awayTeam.name}이 맵 리딩 실수 및 오버 익스텐션으로 주도권을 한 템포 내어줍니다!`);
         }
 
-        const hFight = roles.reduce((sum, r) => sum + getDicedStat(homeRoster[r].player, 'teamfight'), 0) / 5 
-          + (draftBonuses.homeSynergy * 2.5) 
-          + (draftBonuses.homeCounter * 3.5) 
-          + tempoLateFightBonusHome 
-          + leadState.homeBonus 
-          + homeMomentum 
-          + homeComeback 
-          - homeThrowRisk 
-          + complacencyPenaltyHome;
-        const aFight = roles.reduce((sum, r) => sum + getDicedStat(awayRoster[r].player, 'teamfight'), 0) / 5 
-          + (draftBonuses.awaySynergy * 2.5) 
-          + (draftBonuses.awayCounter * 3.5) 
-          + tempoLateFightBonusAway 
-          + leadState.awayBonus 
-          + awayMomentum 
-          + awayComeback 
-          - awayThrowRisk 
-          + complacencyPenaltyAway;
+        const hFight = roles.reduce((sum, r) => sum + getDicedStat(homeRoster[r].player, 'teamfight'), 0) / 5 + (draftBonuses.homeSynergy * 2.5) + tempoLateFightBonusHome + leadState.homeBonus + complacencyPenaltyHome;
+        const aFight = roles.reduce((sum, r) => sum + getDicedStat(awayRoster[r].player, 'teamfight'), 0) / 5 + (draftBonuses.awaySynergy * 2.5) + tempoLateFightBonusAway + leadState.awayBonus + complacencyPenaltyAway;
 
         if (hFight > aFight + 8) {
           homeDrakes++;
-          homeMomentum = Math.min(homeMomentum + 3.0, 12);
-          awayMomentum = Math.max(0, awayMomentum - 1.5);
           // Home Massive Win (3-1 Trade)
           addKill('HOME', 'ADC', ['SUPPORT', 'MID'], 'ADC');
           addKill('HOME', 'MID', ['JUNGLE'], 'MID');
@@ -881,8 +812,6 @@ export function simulateLoLMatch(
           log.push(`${minute}분: [드래곤 한타] 대승!! [${homeRoster.ADC.player.summonerName}] 선수의 엄청난 보디가딩 속 폭발적인 딜링으로 상대를 압살하며 3킬을 쓸어 담고 고대 용 버프를 사냥합니다! (3대1 교전 완승)`);
         } else if (hFight > aFight + 3) {
           homeDrakes++;
-          homeMomentum = Math.min(homeMomentum + 3.0, 12);
-          awayMomentum = Math.max(0, awayMomentum - 1.5);
           // Home Minor Win (2-1 Trade)
           addKill('HOME', 'ADC', ['SUPPORT', 'MID'], 'ADC');
           addKill('HOME', 'MID', ['JUNGLE'], 'MID');
@@ -890,8 +819,6 @@ export function simulateLoLMatch(
           log.push(`${minute}분: [드래곤 한타] 상대를 야금야금 조여가는 조율 속에서 ${homeTeam.name}이 정교한 포커싱으로 2명 제압 후 고대 용둥지를 장악합니다! (2대1 교전 승리)`);
         } else if (aFight > hFight + 8) {
           awayDrakes++;
-          awayMomentum = Math.min(awayMomentum + 3.0, 12);
-          homeMomentum = Math.max(0, homeMomentum - 1.5);
           // Away Massive Win (3-1 Trade)
           addKill('AWAY', 'ADC', ['SUPPORT', 'MID'], 'ADC');
           addKill('AWAY', 'MID', ['JUNGLE'], 'MID');
@@ -900,8 +827,6 @@ export function simulateLoLMatch(
           log.push(`${minute}분: [드래곤 한타] 대패! 후반 지점에서 급습을 시도한 [${awayRoster.ADC.player.summonerName}] 선수가 더블킬을 작렬시키며 진영을 초토화시킵니다! 용을 내어줍니다. (1대3 교전 완패)`);
         } else if (aFight > hFight + 3) {
           awayDrakes++;
-          awayMomentum = Math.min(awayMomentum + 3.0, 12);
-          homeMomentum = Math.max(0, homeMomentum - 1.5);
           // Away Minor Win (2-1 Trade)
           addKill('AWAY', 'ADC', ['SUPPORT', 'MID'], 'ADC');
           addKill('AWAY', 'MID', ['JUNGLE'], 'MID');
@@ -914,13 +839,9 @@ export function simulateLoLMatch(
           addKill('AWAY', 'ADC', ['SUPPORT'], 'ADC');
           if (stealer === 'HOME') {
             homeDrakes++;
-            homeMomentum = Math.min(homeMomentum + 3.0, 12);
-            awayMomentum = Math.max(0, awayMomentum - 1.5);
             log.push(`${minute}분: [드래곤 스틸!] 한치 물러섬 없는 대치 국면에서 [${homeRoster.JUNGLE.player.summonerName}] 선수가 눈부신 스틸을 결행하며 버프를 강탈합니다! 킬은 양 팀 1대1 교환인 호각새입니다.`);
           } else {
             awayDrakes++;
-            awayMomentum = Math.min(awayMomentum + 3.0, 12);
-            homeMomentum = Math.max(0, homeMomentum - 1.5);
             log.push(`${minute}분: [드래곤 스틸!] [${awayRoster.JUNGLE.player.summonerName}] 선수가 한 치 오차도 없는 강타 타이밍으로 스틸을 완료합니다! 난전 격전 속 1대1 킬 스왑!`);
           }
         }
@@ -950,34 +871,14 @@ export function simulateLoLMatch(
           log.push(`${minute}분: [🚨 방심] 압도적인 리드이던 ${awayTeam.name} 측의 대열이 순간 벌어지며 바론 시야 사화에 맹점을 맞이합니다!`);
         }
 
-        const hFight = roles.reduce((sum, r) => sum + getDicedStat(homeRoster[r].player, 'teamfight'), 0) / 5 
-          + (draftBonuses.homeSynergy * 3) 
-          + (draftBonuses.homeCounter * 4) 
-          + tempoLateFightBonusHome 
-          + hShot * 0.25 
-          + leadState.homeBonus 
-          + homeMomentum 
-          + homeComeback 
-          - homeThrowRisk 
-          + complacencyPenaltyHome;
-        const aFight = roles.reduce((sum, r) => sum + getDicedStat(awayRoster[r].player, 'teamfight'), 0) / 5 
-          + (draftBonuses.awaySynergy * 3) 
-          + (draftBonuses.awayCounter * 4) 
-          + tempoLateFightBonusAway 
-          + aShot * 0.25 
-          + leadState.awayBonus 
-          + awayMomentum 
-          + awayComeback 
-          - awayThrowRisk 
-          + complacencyPenaltyAway;
+        const hFight = roles.reduce((sum, r) => sum + getDicedStat(homeRoster[r].player, 'teamfight'), 0) / 5 + (draftBonuses.homeSynergy * 3) + tempoLateFightBonusHome + hShot * 0.25 + leadState.homeBonus + complacencyPenaltyHome;
+        const aFight = roles.reduce((sum, r) => sum + getDicedStat(awayRoster[r].player, 'teamfight'), 0) / 5 + (draftBonuses.awaySynergy * 3) + tempoLateFightBonusAway + aShot * 0.25 + leadState.awayBonus + complacencyPenaltyAway;
 
         const scoreDiff = hFight - aFight;
 
         if (scoreDiff > 10) {
           // Home ACE! (4-1 trade)
           homeBarons++;
-          homeMomentum = Math.min(homeMomentum + 4.0, 12);
-          awayMomentum = Math.max(0, awayMomentum - 2.0);
           homeTowers += 2;
           homeGold += 2000;
 
@@ -991,8 +892,6 @@ export function simulateLoLMatch(
         } else if (scoreDiff > 4) {
           // Home big victory (3-2 Trade)
           homeBarons++;
-          homeMomentum = Math.min(homeMomentum + 4.0, 12);
-          awayMomentum = Math.max(0, awayMomentum - 2.0);
           homeTowers += 1;
           homeGold += 1700;
 
@@ -1006,8 +905,6 @@ export function simulateLoLMatch(
         } else if (scoreDiff < -10) {
           // Away ACE! (1-4 trade)
           awayBarons++;
-          awayMomentum = Math.min(awayMomentum + 4.0, 12);
-          homeMomentum = Math.max(0, homeMomentum - 2.0);
           awayTowers += 2;
           awayGold += 2000;
 
@@ -1021,8 +918,6 @@ export function simulateLoLMatch(
         } else if (scoreDiff < -4) {
           // Away big victory (2-3 Trade)
           awayBarons++;
-          awayMomentum = Math.min(awayMomentum + 4.0, 12);
-          homeMomentum = Math.max(0, homeMomentum - 2.0);
           awayTowers += 1;
           awayGold += 1700;
 
@@ -1040,34 +935,18 @@ export function simulateLoLMatch(
           addKill('AWAY', 'ADC', ['SUPPORT'], 'ADC');
           if (stealer === 'HOME') {
             homeBarons++;
-            homeMomentum = Math.min(homeMomentum + 4.0, 12);
-            awayMomentum = Math.max(0, awayMomentum - 2.0);
             homeGold += 1500;
             log.push(`${minute}분: [오브젝트] [${homeRoster.JUNGLE.player.summonerName}] 선수의 심장을 부여잡는 기적의 강타! 상대의 억 소리 나는 버스트를 한방 스마이트로 탈취하여 버프를 뺏어옵니다! 공방 수습 후 1대1 동점 교환!`);
           } else {
             awayBarons++;
-            awayMomentum = Math.min(awayMomentum + 4.0, 12);
-            homeMomentum = Math.max(0, homeMomentum - 2.0);
             awayGold += 1500;
             log.push(`${minute}분: [오브젝트] 적 정글러 [${awayRoster.JUNGLE.player.summonerName}] 선수가 사력을 다한 강타로 스틸을 성립하며 바론 버프의 키를 가져옵니다! 1대1 킬을 기록하는 분쟁지대였습니다.`);
           }
         }
       } else if (fightRoll < 0.40) {
         // Late random skirmish (2-1 Trade, or 1-1 Trade)
-        const hFight = roles.reduce((sum, r) => sum + getDicedStat(homeRoster[r].player, 'teamfight'), 0) / 5 
-          + (draftBonuses.homeSynergy * 2.5) 
-          + (draftBonuses.homeCounter * 3.5) 
-          + tempoLateFightBonusHome
-          + homeMomentum
-          + homeComeback
-          - homeThrowRisk;
-        const aFight = roles.reduce((sum, r) => sum + getDicedStat(awayRoster[r].player, 'teamfight'), 0) / 5 
-          + (draftBonuses.awaySynergy * 2.5) 
-          + (draftBonuses.awayCounter * 3.5) 
-          + tempoLateFightBonusAway
-          + awayMomentum
-          + awayComeback
-          - awayThrowRisk;
+        const hFight = roles.reduce((sum, r) => sum + getDicedStat(homeRoster[r].player, 'teamfight'), 0) / 5 + (draftBonuses.homeSynergy * 2.5) + tempoLateFightBonusHome;
+        const aFight = roles.reduce((sum, r) => sum + getDicedStat(awayRoster[r].player, 'teamfight'), 0) / 5 + (draftBonuses.awaySynergy * 2.5) + tempoLateFightBonusAway;
 
         const bLead = (homeBarons * 8) - (awayBarons * 8);
         const leadState = getGoldLeadBonus(homeGold, awayGold);

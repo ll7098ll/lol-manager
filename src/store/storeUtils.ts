@@ -92,6 +92,32 @@ export const buildAIRosterMap = (
     if (!p) {
       p = teamPlayers.find(pl => pl.teamId === teamId) || teamPlayers[0];
     }
+    if (!p) {
+      p = {
+        id: `fallback_${teamId}_${lane}`,
+        name: `대체 선수 (${lane})`,
+        summonerName: `Sub_${lane}`,
+        role: lane,
+        teamId: teamId,
+        age: 20,
+        contractYears: 1,
+        salary: 10000,
+        lanePhase: 60,
+        mechanics: 60,
+        macro: 60,
+        teamfight: 60,
+        shotcalling: 60,
+        mental: 60,
+        consistency: 60,
+        championPool: {},
+        condition: 100,
+        form: 'NORMAL',
+        morale: 80,
+        potential: 70,
+        playstylePreference: 'BALANCED',
+        energy: 100
+      };
+    }
 
     // Use smart draft AI to pick a champion for this lane
     const champId = selectSmartDraftPick(pickedChamps, [], pickedChamps, false);

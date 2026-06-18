@@ -76,6 +76,7 @@ export interface GameStore {
   // New stove league & player management methods
   buyPlayer: (playerId: string) => { success: boolean; message: string };
   sellPlayer: (playerId: string) => { success: boolean; message: string };
+  tradePlayers: (myPlayerId: string, opponentPlayerId: string) => { success: boolean; message: string };
   updateStartingLineup: (role: 'TOP' | 'JUNGLE' | 'MID' | 'ADC' | 'SUPPORT', playerId: string) => void;
   trainPlayerIndividual: (playerId: string, program: string) => { success: boolean; message: string };
   setPlayerTrainingFocus: (playerId: string, focus: 'LANING' | 'MECHANICS' | 'MACRO' | 'TEAMFIGHT' | 'VISION' | 'MENTAL' | 'BALANCED') => void;

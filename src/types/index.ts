@@ -97,7 +97,6 @@ export interface Match {
   killHistory?: { home: number; away: number }[];
   pogPlayerId?: string; // Player of the game
   matchType?: 'SPRING_REGULAR' | 'SPRING_PLAYOFFS' | 'MSI' | 'SUMMER_REGULAR' | 'SUMMER_PLAYOFFS' | 'WORLDS';
-  boFormat?: 'BO1' | 'BO2' | 'BO3' | 'BO5';
   homeStats?: PlayerMatchStats[];
   awayStats?: PlayerMatchStats[];
 }
@@ -153,16 +152,5 @@ export interface Staff {
   trainingSkill: number; // For HEAD_COACH: boosts individual training
   tacticalSkill: number; // For TACTICAL_COACH: boosts drafting bonus
   mentalSkill: number; // For MENTAL_COACH: boosts morale recovery & conditions
-}
-
-export interface SeriesState {
-  matchId: string;
-  currentSet: number;
-  homeWins: number;
-  awayWins: number;
-  maxWins: number; // e.g. 2 for BO3, 3 for BO5, 1 for BO1
-  boFormat: 'BO1' | 'BO2' | 'BO3' | 'BO5';
-  playedSets: any[]; // List of MatchSimResult for each finished set
-  fearlessPickedChampions: string[]; // List of all champion IDs picked in previous sets of this series
 }
 

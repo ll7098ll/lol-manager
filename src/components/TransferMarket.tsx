@@ -40,7 +40,8 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
     sellPlayer, 
     updateStartingLineup, 
     startingLineup,
-    negotiateContractSuccess
+    negotiateContractSuccess,
+    tradePlayers
   } = useGameStore();
 
   // State
@@ -63,6 +64,10 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
   const [negIsRenewal, setNegIsRenewal] = useState<boolean>(false);
   const [demandSalary, setDemandSalary] = useState<number>(0);
   const [demandBonus, setDemandBonus] = useState<number>(0);
+  
+  // Trade state
+  const [isTradeMode, setIsTradeMode] = useState<boolean>(false);
+  const [selectedMyPlayerId, setSelectedMyPlayerId] = useState<string>('');
 
   // Helper: Show toast notification instead of alert()
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -127,6 +132,20 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
         ? `안녕하세요 감독님. 제 계약이 끝을 향해가고 있네요. 조건만 만족스럽다면 이 명문 구단 ${myTeam?.name || ''}에서 계속 뛰고 싶습니다.` 
         : `러브콜을 주셔서 대단히 영광입니다. 제 실력과 가치에 부합하는 합리적인 제안과 대우를 기대하겠습니다.`
     );
+
+    setIsTradeMode(false);
+    setSelectedMyPlayerId('');
+  };
+
+  const submitTradeOffer = () => {
+    if (!negotiatingPlayer || !selectedMyPlayerId) return;
+    const result = tradePlayers(selectedMyPlayerId, negotiatingPlayer.id);
+    if (result.success) {
+      showToast(result.message, 'success');
+      setNegotiatingPlayer(null);
+    } else {
+      showToast(result.message, 'error');
+    }
   };
 
   const submitOffer = () => {
@@ -852,264 +871,447 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                 </div>
               </div>
 
+              {/* Trade or Salary Negotiation Mode Tab */}
+              {p.teamId !== 'FA' && !negIsRenewal && (
+                <div className="flex bg-muted/20 border-b border-border p-1 gap-1 shrink-0 select-none">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsTradeMode(false);
+                      setSelectedMyPlayerId('');
+                    }}
+                    className={`flex-1 py-1.5 text-xs font-black rounded-lg transition-all text-center cursor-pointer ${
+                      !isTradeMode
+                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[inset_0_0_8px_rgba(34,211,238,0.1)]'
+                        : 'text-muted-foreground hover:text-foreground border border-transparent'
+                    }`}
+                  >
+                    💰 바이아웃 연봉 협상
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsTradeMode(true);
+                      const matchPlayer = playerRoster.find(pl => pl.role === p.role);
+                      setSelectedMyPlayerId(matchPlayer ? matchPlayer.id : '');
+                    }}
+                    className={`flex-1 py-1.5 text-xs font-black rounded-lg transition-all text-center cursor-pointer ${
+                      isTradeMode
+                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[inset_0_0_8px_rgba(34,211,238,0.1)]'
+                        : 'text-muted-foreground hover:text-foreground border border-transparent'
+                    }`}
+                  >
+                    🤝 1:1 트레이드 제안
+                  </button>
+                </div>
+              )}
+
               {/* Interactive Negotiation Board */}
               <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 leading-relaxed relative z-10 overflow-y-auto flex-1">
                 
-                {/* Left Column: Player Mood & Message */}
-                <div className="flex flex-col gap-3 sm:gap-4 bg-background/60 p-3 sm:p-4 rounded-xl border border-border shadow-inner shadow-black/30">
-                  <div className="flex items-center justify-between pb-2 border-b border-border/60">
-                    <span className="text-[10.5px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                      🗣️ 선수 피드백 (Player Sentiment)
-                    </span>
-                    <div className="flex items-center gap-1 text-[11px]">
-                      <span className="text-muted-foreground">인내도:</span>
-                      <div className="flex gap-0.5 animate-pulse">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <div 
-                            key={i} 
-                            className={`w-2 h-1.5 rounded-full shadow-inner shadow-black/50 ${
-                              i < negPatience 
-                                ? negPatience <= 2 ? 'bg-amber-500' : 'bg-emerald-500' 
-                                : 'bg-muted'
-                            }`} 
-                          />
-                        ))}
+                {!isTradeMode ? (
+                  <>
+                    {/* Left Column: Player Mood & Message */}
+                    <div className="flex flex-col gap-3 sm:gap-4 bg-background/60 p-3 sm:p-4 rounded-xl border border-border shadow-inner shadow-black/30">
+                      <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                        <span className="text-[10.5px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                          🗣️ 선수 피드백 (Player Sentiment)
+                        </span>
+                        <div className="flex items-center gap-1 text-[11px]">
+                          <span className="text-muted-foreground">인내도:</span>
+                          <div className="flex gap-0.5 animate-pulse">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <div 
+                                key={i} 
+                                className={`w-2 h-1.5 rounded-full shadow-inner shadow-black/50 ${
+                                  i < negPatience 
+                                    ? negPatience <= 2 ? 'bg-amber-500' : 'bg-emerald-500' 
+                                    : 'bg-muted'
+                                }`} 
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Character visual feedback / Portrait Emoji */}
+                      <div className="flex items-center gap-3 sm:gap-4 py-1 select-none">
+                        <div className="text-3xl sm:text-4xl bg-background p-2.5 sm:p-3 h-14 w-14 sm:h-16 sm:w-16 border border-border shadow-inner shadow-black/30 rounded-2xl flex items-center justify-center shrink-0 animate-bounce">
+                          {negMood === 'SIGNED' ? '🤩' :
+                           negMood === 'WALKED_AWAY' ? '😡' :
+                           negMood === 'INSULTED' ? '🤬' :
+                           negMood === 'SKEPTICAL' ? '😒' :
+                           negMood === 'INTERESTED' ? '🙂' : '😐'}
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-muted-foreground uppercase block font-black leading-none mb-1">상태 정보</span>
+                          <strong className={`text-xs drop-shadow-sm ${
+                            negMood === 'SIGNED' ? 'text-emerald-400' :
+                            negMood === 'WALKED_AWAY' ? 'text-destructive font-black' :
+                            negMood === 'INSULTED' ? 'text-destructive/80' :
+                            negMood === 'SKEPTICAL' ? 'text-muted-foreground' :
+                            negMood === 'INTERESTED' ? 'text-cyan-400' : 'text-muted-foreground'
+                          }`}>
+                            {negMood === 'SIGNED' ? '계약에 합의함' :
+                             negMood === 'WALKED_AWAY' ? '협상 결렬' :
+                             negMood === 'INSULTED' ? '제의에 극도로 실망함' :
+                             negMood === 'SKEPTICAL' ? '회의적인 태도' :
+                             negMood === 'INTERESTED' ? '제의에 매력 느낌' : '반응 대기 중'}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* Speech bubble */}
+                      <div className="bg-muted/20 border border-border p-2.5 sm:p-3 rounded-lg text-muted-foreground text-xs italic relative flex-1 shadow-inner shadow-black/20">
+                        <div className="absolute top-3 -left-1.5 w-3 h-3 bg-muted/20 border-l border-b border-border rotate-45 hidden sm:block" />
+                        "{negMessage}"
+                      </div>
+
+                      {/* Target demand summary for debugging / hint */}
+                      {negMood !== 'SIGNED' && negMood !== 'WALKED_AWAY' && (
+                        <div className="bg-background p-2.5 rounded border border-border text-[9px] sm:text-[10px] text-muted-foreground space-y-1 shadow-inner shadow-black/20 font-mono">
+                          <div className="flex justify-between select-none">
+                            <span>요구 최소 연봉치:</span>
+                            <strong className="text-foreground/80">{formatCurrency(demandSalary)} / 년</strong>
+                          </div>
+                          <div className="flex justify-between select-none">
+                            <span>인정 계약금 하한선:</span>
+                            <strong className="text-foreground/80">{formatCurrency(demandBonus)} (사이닝 보너스)</strong>
+                          </div>
+                          <p className="text-[8.5px] sm:text-[9px] leading-relaxed text-muted-foreground/80 pt-1 border-t border-border/60">
+                            * 팁: 요구 계약금보다 대단한 보너스(사이닝)를 꽂아주면 선수가 흥미를 느껴 연봉 요구액을 약간 깎아주기도 합니다.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Column: Offer Editor */}
+                    <div className="space-y-3 sm:space-y-4">
+                      <h4 className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground uppercase pb-2 border-b border-border/60">
+                        💼 구단 연봉 제안 정보 (Offer parameters)
+                      </h4>
+
+                      {/* Contract Years Button Group */}
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block mb-1.5 font-bold">계약 연장 기간 (Contract Years)</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[1, 2, 3].map((years) => (
+                            <button
+                              key={years}
+                              type="button"
+                              disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
+                              onClick={() => setNegYears(years)}
+                              className={`py-2 rounded-lg text-xs font-bold font-mono transition-colors border cursor-pointer shadow-inner ${
+                                negYears === years
+                                  ? 'bg-primary/20 border-primary text-primary shadow-black/30'
+                                  : 'bg-background border-border text-muted-foreground hover:text-foreground shadow-black/50'
+                              }`}
+                            >
+                              {years} 년 계약
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Quick Auto-Match Preset */}
+                      {negMood !== 'SIGNED' && negMood !== 'WALKED_AWAY' && (
+                        <div className="bg-primary/5 border border-primary/20 p-2.5 rounded-lg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 select-none">
+                          <div className="space-y-0.5">
+                            <span className="text-[10px] text-primary/80 font-black block">💡 원클릭 제안 프리셋</span>
+                            <span className="text-[9px] text-muted-foreground block">선수가 요구하는 최소 기준에 정확히 조율 조준합니다.</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNegSalary(demandSalary);
+                              setNegBonus(demandBonus);
+                            }}
+                            className="px-3 py-2 sm:py-1.5 bg-primary/20 hover:bg-primary/35 text-primary border border-primary/40 rounded-md text-[10px] font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_8px_rgba(var(--primary),0.15)] text-center font-mono"
+                          >
+                            ⚡ 선수 요구조건 즉시 일치시킴
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Annual Salary input with fine-tune buttons */}
+                      <div className="bg-background/40 p-3 rounded-lg border border-border/80">
+                        <div className="flex justify-between items-center text-[10px] text-muted-foreground mb-2 leading-none select-none">
+                          <span className="font-bold flex items-center gap-1">💰 제시 연간 연봉 (Annual Salary)</span>
+                          <strong className="text-primary text-xs drop-shadow-[0_0_2px_rgba(var(--primary),0.5)] font-black">
+                            {formatCurrency(negSalary)}
+                          </strong>
+                        </div>
+                        
+                        {/* Direct Input & Selector */}
+                        <div className="flex gap-2 items-center">
+                          <div className="relative flex-1">
+                            <input
+                              type="number"
+                              disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
+                              min={Math.floor(p.salary * 0.4)}
+                              max={Math.floor(p.salary * 2.5)}
+                              value={negSalary}
+                              onChange={(e) => setNegSalary(Math.max(0, Number(e.target.value)))}
+                              className="w-full bg-background/80 shadow-inner border border-border/80 py-2 sm:py-1.5 pl-3 pr-10 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-primary/50 text-foreground"
+                              placeholder="연봉 입력"
+                            />
+                            <span className="absolute right-3 top-2.5 sm:top-2 text-[9px] text-muted-foreground font-bold font-sans">만 원</span>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
+                            onClick={() => setNegSalary(demandSalary)}
+                            className="bg-background/60 shadow-sm border border-border hover:bg-muted/50 px-2 h-[34px] sm:h-[30px] rounded-lg text-[9px] font-bold text-muted-foreground hover:text-foreground shrink-0 transition-colors cursor-pointer"
+                            title="요구치 자동 적용"
+                          >
+                            요구치 적용
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-5 gap-1 mt-2.5">
+                          {[
+                            { label: '+1억', val: 10000 },
+                            { label: '+5000만', val: 5000 },
+                            { label: '+1000만', val: 1000 },
+                            { label: '-1000만', val: -1000 },
+                            { label: '-5000만', val: -5000 }
+                          ].map((item) => (
+                            <button
+                              key={item.label}
+                              type="button"
+                              disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
+                              onClick={() => setNegSalary(Math.max(1000, negSalary + item.val))}
+                              className="bg-background shadow-inner shadow-black/30 hover:bg-muted/50 border border-border py-1 px-0.5 rounded text-[9px] text-muted-foreground hover:text-foreground font-black transition-all font-sans cursor-pointer"
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Signing Bonus input with fine-tune buttons */}
+                      <div className="bg-background/40 p-3 rounded-lg border border-border/80">
+                        <div className="flex justify-between items-center text-[10px] text-muted-foreground mb-2 leading-none select-none">
+                          <span className="font-bold flex items-center gap-1">✨ 사이닝 보너스 (signing Bonus)</span>
+                          <strong className="text-emerald-400 text-xs drop-shadow-[0_0_2px_rgba(52,211,153,0.5)] font-black font-mono">
+                            {formatCurrency(negBonus)}
+                          </strong>
+                        </div>
+
+                        {/* Direct Input & Selector */}
+                        <div className="flex gap-2 items-center">
+                          <div className="relative flex-1">
+                            <input
+                              type="number"
+                              disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
+                              min={0}
+                              max={Math.floor((myTeam?.budget || 100000) * 0.95)}
+                              value={negBonus}
+                              onChange={(e) => setNegBonus(Math.max(0, Number(e.target.value)))}
+                              className="w-full bg-background/80 shadow-inner border border-border/80 py-2 sm:py-1.5 pl-3 pr-10 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-emerald-500/50 text-foreground"
+                              placeholder="계약 보너스 입력"
+                            />
+                            <span className="absolute right-3 top-2.5 sm:top-2 text-[9px] text-muted-foreground font-bold font-sans">만 원</span>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
+                            onClick={() => setNegBonus(demandBonus)}
+                            className="bg-background/60 shadow-sm border border-border hover:bg-muted/50 px-2 h-[34px] sm:h-[30px] rounded-lg text-[9px] font-bold text-muted-foreground hover:text-foreground shrink-0 transition-colors cursor-pointer"
+                            title="요구치 자동 적용"
+                          >
+                            요구치 적용
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-5 gap-1 mt-2.5">
+                          {[
+                            { label: '+5000만', val: 5000 },
+                            { label: '+1000만', val: 1000 },
+                            { label: '+500만', val: 500 },
+                            { label: '-1000만', val: -1000 },
+                            { label: '0원', val: 0 }
+                          ].map((item) => (
+                            <button
+                              key={item.label}
+                              type="button"
+                              disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
+                              onClick={() => {
+                                if (item.val === 0) {
+                                  setNegBonus(0);
+                                } else {
+                                  setNegBonus(Math.max(0, Math.min((myTeam?.budget || 100000), negBonus + item.val)));
+                                }
+                              }}
+                              className="bg-background shadow-inner shadow-black/30 hover:bg-muted/50 border border-border py-1 px-0.5 rounded text-[9px] text-muted-foreground hover:text-foreground font-black transition-all font-sans cursor-pointer"
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Buyout summary details */}
+                      {buyoutFee > 0 && (
+                        <div className="bg-background shadow-inner shadow-black/20 border border-border p-2.5 rounded-lg text-[9px] text-muted-foreground leading-relaxed font-mono">
+                          구단 소속 이적 보상료: <strong className="text-foreground/80">{formatCurrency(buyoutFee)}</strong>이 추가 청구되어 소속 구단 금고로 타행 송금됩니다.
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  /* 1:1 Trade Proposal Mode View */
+                  <div className="col-span-1 md:col-span-2 flex flex-col gap-4">
+                    <div className="bg-background/60 p-4 rounded-xl border border-border space-y-4">
+                      <div className="flex justify-between items-center border-b border-border/60 pb-2">
+                        <h3 className="text-xs font-extrabold text-cyan-400 uppercase tracking-wider flex items-center gap-1">
+                          🔄 1:1 트레이드 대상 선택 (포지션: {p.role})
+                        </h3>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          우리 구단 선수 1명 ↔ 상대 구단 {p.summonerName} 맞교환
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <span className="text-[10px] text-muted-foreground font-mono block">보낼 우리 선수 선택:</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {playerRoster
+                            .filter(pl => pl.role === p.role)
+                            .map(myPl => {
+                              const isSelected = selectedMyPlayerId === myPl.id;
+                              const myOvr = getOvr(myPl);
+                              return (
+                                <button
+                                  key={myPl.id}
+                                  type="button"
+                                  onClick={() => setSelectedMyPlayerId(myPl.id)}
+                                  className={`p-3 rounded-xl border text-left transition-all flex justify-between items-center cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-400 shadow-[inset_0_0_10px_rgba(34,211,238,0.15)]'
+                                      : 'bg-background hover:bg-muted/50 border-border text-foreground'
+                                  }`}
+                                >
+                                  <div>
+                                    <div className="text-xs font-bold font-mono">
+                                      {myPl.summonerName} <span className="text-[9px] text-muted-foreground font-normal">({myPl.name})</span>
+                                    </div>
+                                    <div className="text-[9px] text-muted-foreground mt-0.5 font-mono">
+                                      나이: {myPl.age}세 • 연봉: {formatCurrency(myPl.salary)}
+                                    </div>
+                                  </div>
+                                  <span className={`text-xs font-black font-mono ${isSelected ? 'text-cyan-400' : 'text-muted-foreground'}`}>
+                                    OVR {myOvr}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                        </div>
+                        
+                        {playerRoster.filter(pl => pl.role === p.role).length === 0 && (
+                          <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-[10px] rounded-lg font-mono leading-relaxed">
+                            ⚠️ 경고: 현재 아군 구단에 동일 포지션({p.role})의 벤치 후보 또는 소속 선수가 없습니다. 다른 선수를 먼저 구단에 수혈한 뒤 트레이드를 타진하십시오.
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    {/* Value Comparison & AI Response Preview */}
+                    {(() => {
+                      const myPlSelected = playerRoster.find(pl => pl.id === selectedMyPlayerId);
+                      if (!myPlSelected) return null;
+                      
+                      const myOvr = getOvr(myPlSelected);
+                      const oppOvr = getOvr(p);
+                      const myPotential = myPlSelected.potential || 80;
+                      const oppPotential = p.potential || 80;
+
+                      const myVal = Math.round(myOvr * 1.0 + myPotential * 0.2 + (30 - myPlSelected.age) * 1.5);
+                      const oppVal = Math.round(oppOvr * 1.0 + oppPotential * 0.2 + (30 - p.age) * 1.5);
+                      const acceptanceChance = myVal >= oppVal * 0.95;
+
+                      return (
+                        <div className="bg-background/60 p-4 rounded-xl border border-border space-y-4 shadow-inner shadow-black/30">
+                          <h4 className="text-[10.5px] font-bold text-muted-foreground uppercase pb-1.5 border-b border-border/60 flex items-center gap-1.5">
+                            📊 트레이드 예상 가치 비교 분석
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                            {/* Our player */}
+                            <div className="p-3 bg-background/80 rounded-lg border border-border/80 flex flex-col justify-between shadow-sm">
+                              <div>
+                                <span className="text-[8.5px] text-cyan-400 font-bold bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.2 rounded block w-max mb-1.5">제안 선수 (아군)</span>
+                                <div className="font-extrabold text-foreground text-sm">{myPlSelected.summonerName}</div>
+                              </div>
+                              <div className="mt-2.5 space-y-0.5 text-[10px] text-muted-foreground">
+                                <div className="flex justify-between"><span>전투력(OVR):</span><strong className="text-foreground">{myOvr}</strong></div>
+                                <div className="flex justify-between"><span>잠재력(POT):</span><strong className="text-foreground">{myPotential}</strong></div>
+                                <div className="flex justify-between"><span>나이:</span><strong className="text-foreground">{myPlSelected.age}세</strong></div>
+                                <div className="pt-1.5 border-t border-border/60 mt-1.5 flex justify-between font-bold">
+                                  <span>가치 환산 점수:</span>
+                                  <span className="text-cyan-400">{myVal}점</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Opponent player */}
+                            <div className="p-3 bg-background/80 rounded-lg border border-border/80 flex flex-col justify-between shadow-sm">
+                              <div>
+                                <span className="text-[8.5px] text-amber-500 font-bold bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded block w-max mb-1.5">영입 선수 (상대)</span>
+                                <div className="font-extrabold text-foreground text-sm">{p.summonerName}</div>
+                              </div>
+                              <div className="mt-2.5 space-y-0.5 text-[10px] text-muted-foreground">
+                                <div className="flex justify-between"><span>전투력(OVR):</span><strong className="text-foreground">{oppOvr}</strong></div>
+                                <div className="flex justify-between"><span>잠재력(POT):</span><strong className="text-foreground">{oppPotential}</strong></div>
+                                <div className="flex justify-between"><span>나이:</span><strong className="text-foreground">{p.age}세</strong></div>
+                                <div className="pt-1.5 border-t border-border/60 mt-1.5 flex justify-between font-bold">
+                                  <span>가치 환산 점수:</span>
+                                  <span className="text-amber-500">{oppVal}점</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Visual bar indicator */}
+                          <div className="space-y-1 pt-1 font-mono">
+                            <div className="flex justify-between text-[9px] text-muted-foreground select-none">
+                              <span>우리의 제안 가치 ({myVal}점)</span>
+                              <span>상대 요구 최소 기준 ({Math.round(oppVal * 0.95)}점)</span>
+                            </div>
+                            <div className="w-full bg-background rounded-full h-2.5 overflow-hidden border border-border shadow-inner">
+                              <div 
+                                className={`h-full transition-all duration-500 ${acceptanceChance ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-destructive'}`} 
+                                style={{ width: `${Math.min(100, (myVal / (oppVal || 1)) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* AI Sentiment Feedback Text */}
+                          <div className={`p-3 rounded-lg border text-xs leading-relaxed font-mono ${
+                            acceptanceChance 
+                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                              : 'bg-destructive/10 border-destructive/30 text-destructive'
+                          }`}>
+                            {acceptanceChance ? (
+                              <p>🤩 LCK 이적 전문가 분석: "제안하신 카드의 가치가 매력적입니다! 상대 구단 프런트가 적극 검토 중이며 승낙할 가능성이 매우 큽니다."</p>
+                            ) : (
+                              <p>🤬 LCK 이적 전문가 분석: "제안된 가치가 상대 요구치에 턱없이 부족합니다. 트레이드 승낙을 위해 OVR이 높거나 미래가 기대되는 유망주 카드를 제시해 주세요."</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
-
-                  {/* Character visual feedback / Portrait Emoji */}
-                  <div className="flex items-center gap-3 sm:gap-4 py-1 select-none">
-                    <div className="text-3xl sm:text-4xl bg-background p-2.5 sm:p-3 h-14 w-14 sm:h-16 sm:w-16 border border-border shadow-inner shadow-black/30 rounded-2xl flex items-center justify-center shrink-0 animate-bounce">
-                      {negMood === 'SIGNED' ? '🤩' :
-                       negMood === 'WALKED_AWAY' ? '😡' :
-                       negMood === 'INSULTED' ? '🤬' :
-                       negMood === 'SKEPTICAL' ? '😒' :
-                       negMood === 'INTERESTED' ? '🙂' : '😐'}
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-muted-foreground uppercase block font-black leading-none mb-1">상태 정보</span>
-                      <strong className={`text-xs drop-shadow-sm ${
-                        negMood === 'SIGNED' ? 'text-emerald-400' :
-                        negMood === 'WALKED_AWAY' ? 'text-destructive font-black' :
-                        negMood === 'INSULTED' ? 'text-destructive/80' :
-                        negMood === 'SKEPTICAL' ? 'text-muted-foreground' :
-                        negMood === 'INTERESTED' ? 'text-cyan-400' : 'text-muted-foreground'
-                      }`}>
-                        {negMood === 'SIGNED' ? '계약에 합의함' :
-                         negMood === 'WALKED_AWAY' ? '협상 결렬' :
-                         negMood === 'INSULTED' ? '제의에 극도로 실망함' :
-                         negMood === 'SKEPTICAL' ? '회의적인 태도' :
-                         negMood === 'INTERESTED' ? '제의에 매력 느낌' : '반응 대기 중'}
-                      </strong>
-                    </div>
-                  </div>
-
-                  {/* Speech bubble */}
-                  <div className="bg-muted/20 border border-border p-2.5 sm:p-3 rounded-lg text-muted-foreground text-xs italic relative flex-1 shadow-inner shadow-black/20">
-                    <div className="absolute top-3 -left-1.5 w-3 h-3 bg-muted/20 border-l border-b border-border rotate-45 hidden sm:block" />
-                    "{negMessage}"
-                  </div>
-
-                  {/* Target demand summary for debugging / hint */}
-                  {negMood !== 'SIGNED' && negMood !== 'WALKED_AWAY' && (
-                    <div className="bg-background p-2.5 rounded border border-border text-[9px] sm:text-[10px] text-muted-foreground space-y-1 shadow-inner shadow-black/20 font-mono">
-                      <div className="flex justify-between select-none">
-                        <span>요구 최소 연봉치:</span>
-                        <strong className="text-foreground/80">{formatCurrency(demandSalary)} / 년</strong>
-                      </div>
-                      <div className="flex justify-between select-none">
-                        <span>인정 계약금 하한선:</span>
-                        <strong className="text-foreground/80">{formatCurrency(demandBonus)} (사이닝 보너스)</strong>
-                      </div>
-                      <p className="text-[8.5px] sm:text-[9px] leading-relaxed text-muted-foreground/80 pt-1 border-t border-border/60">
-                        * 팁: 요구 계약금보다 대단한 보너스(사이닝)를 꽂아주면 선수가 흥미를 느껴 연봉 요구액을 약간 깎아주기도 합니다.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Column: Offer Editor */}
-                <div className="space-y-3 sm:space-y-4">
-                  <h4 className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground uppercase pb-2 border-b border-border/60">
-                    💼 구단 연봉 제안 정보 (Offer parameters)
-                  </h4>
-
-                  {/* Contract Years Button Group */}
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block mb-1.5 font-bold">계약 연장 기간 (Contract Years)</span>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[1, 2, 3].map((years) => (
-                        <button
-                          key={years}
-                          type="button"
-                          disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
-                          onClick={() => setNegYears(years)}
-                          className={`py-2 rounded-lg text-xs font-bold font-mono transition-colors border cursor-pointer shadow-inner ${
-                            negYears === years
-                              ? 'bg-primary/20 border-primary text-primary shadow-black/30'
-                              : 'bg-background border-border text-muted-foreground hover:text-foreground shadow-black/50'
-                          }`}
-                        >
-                          {years} 년 계약
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Quick Auto-Match Preset */}
-                  {negMood !== 'SIGNED' && negMood !== 'WALKED_AWAY' && (
-                    <div className="bg-primary/5 border border-primary/20 p-2.5 rounded-lg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 select-none">
-                      <div className="space-y-0.5">
-                        <span className="text-[10px] text-primary/80 font-black block">💡 원클릭 제안 프리셋</span>
-                        <span className="text-[9px] text-muted-foreground block">선수가 요구하는 최소 기준에 정확히 조율 조준합니다.</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNegSalary(demandSalary);
-                          setNegBonus(demandBonus);
-                        }}
-                        className="px-3 py-2 sm:py-1.5 bg-primary/20 hover:bg-primary/35 text-primary border border-primary/40 rounded-md text-[10px] font-black cursor-pointer transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_8px_rgba(var(--primary),0.15)] text-center font-mono"
-                      >
-                        ⚡ 선수 요구조건 즉시 일치시킴
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Annual Salary input with fine-tune buttons */}
-                  <div className="bg-background/40 p-3 rounded-lg border border-border/80">
-                    <div className="flex justify-between items-center text-[10px] text-muted-foreground mb-2 leading-none select-none">
-                      <span className="font-bold flex items-center gap-1">💰 제시 연간 연봉 (Annual Salary)</span>
-                      <strong className="text-primary text-xs drop-shadow-[0_0_2px_rgba(var(--primary),0.5)] font-black">
-                        {formatCurrency(negSalary)}
-                      </strong>
-                    </div>
-                    
-                    {/* Direct Input & Selector */}
-                    <div className="flex gap-2 items-center">
-                      <div className="relative flex-1">
-                        <input
-                          type="number"
-                          disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
-                          min={Math.floor(p.salary * 0.4)}
-                          max={Math.floor(p.salary * 2.5)}
-                          value={negSalary}
-                          onChange={(e) => setNegSalary(Math.max(0, Number(e.target.value)))}
-                          className="w-full bg-background/80 shadow-inner border border-border/80 py-2 sm:py-1.5 pl-3 pr-10 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-primary/50 text-foreground"
-                          placeholder="연봉 입력"
-                        />
-                        <span className="absolute right-3 top-2.5 sm:top-2 text-[9px] text-muted-foreground font-bold font-sans">만 원</span>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
-                        onClick={() => setNegSalary(demandSalary)}
-                        className="bg-background/60 shadow-sm border border-border hover:bg-muted/50 px-2 h-[34px] sm:h-[30px] rounded-lg text-[9px] font-bold text-muted-foreground hover:text-foreground shrink-0 transition-colors cursor-pointer"
-                        title="요구치 자동 적용"
-                      >
-                        요구치 적용
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-5 gap-1 mt-2.5">
-                      {[
-                        { label: '+1억', val: 10000 },
-                        { label: '+5000만', val: 5000 },
-                        { label: '+1000만', val: 1000 },
-                        { label: '-1000만', val: -1000 },
-                        { label: '-5000만', val: -5000 }
-                      ].map((item) => (
-                        <button
-                          key={item.label}
-                          type="button"
-                          disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
-                          onClick={() => setNegSalary(Math.max(1000, negSalary + item.val))}
-                          className="bg-background shadow-inner shadow-black/30 hover:bg-muted/50 border border-border py-1 px-0.5 rounded text-[9px] text-muted-foreground hover:text-foreground font-black transition-all font-sans cursor-pointer"
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Signing Bonus input with fine-tune buttons */}
-                  <div className="bg-background/40 p-3 rounded-lg border border-border/80">
-                    <div className="flex justify-between items-center text-[10px] text-muted-foreground mb-2 leading-none select-none">
-                      <span className="font-bold flex items-center gap-1">✨ 사이닝 보너스 (signing Bonus)</span>
-                      <strong className="text-emerald-400 text-xs drop-shadow-[0_0_2px_rgba(52,211,153,0.5)] font-black font-mono">
-                        {formatCurrency(negBonus)}
-                      </strong>
-                    </div>
-
-                    {/* Direct Input & Selector */}
-                    <div className="flex gap-2 items-center">
-                      <div className="relative flex-1">
-                        <input
-                          type="number"
-                          disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
-                          min={0}
-                          max={Math.floor((myTeam?.budget || 100000) * 0.95)}
-                          value={negBonus}
-                          onChange={(e) => setNegBonus(Math.max(0, Number(e.target.value)))}
-                          className="w-full bg-background/80 shadow-inner border border-border/80 py-2 sm:py-1.5 pl-3 pr-10 rounded-lg text-xs font-mono font-bold focus:outline-none focus:border-emerald-500/50 text-foreground"
-                          placeholder="계약 보너스 입력"
-                        />
-                        <span className="absolute right-3 top-2.5 sm:top-2 text-[9px] text-muted-foreground font-bold font-sans">만 원</span>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
-                        onClick={() => setNegBonus(demandBonus)}
-                        className="bg-background/60 shadow-sm border border-border hover:bg-muted/50 px-2 h-[34px] sm:h-[30px] rounded-lg text-[9px] font-bold text-muted-foreground hover:text-foreground shrink-0 transition-colors cursor-pointer"
-                        title="요구치 자동 적용"
-                      >
-                        요구치 적용
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-5 gap-1 mt-2.5">
-                      {[
-                        { label: '+5000만', val: 5000 },
-                        { label: '+1000만', val: 1000 },
-                        { label: '+500만', val: 500 },
-                        { label: '-1000만', val: -1000 },
-                        { label: '0원', val: 0 }
-                      ].map((item) => (
-                        <button
-                          key={item.label}
-                          type="button"
-                          disabled={negMood === 'SIGNED' || negMood === 'WALKED_AWAY'}
-                          onClick={() => {
-                            if (item.val === 0) {
-                              setNegBonus(0);
-                            } else {
-                              setNegBonus(Math.max(0, Math.min((myTeam?.budget || 100000), negBonus + item.val)));
-                            }
-                          }}
-                          className="bg-background shadow-inner shadow-black/30 hover:bg-muted/50 border border-border py-1 px-0.5 rounded text-[9px] text-muted-foreground hover:text-foreground font-black transition-all font-sans cursor-pointer"
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Buyout summary details */}
-                  {buyoutFee > 0 && (
-                    <div className="bg-background shadow-inner shadow-black/20 border border-border p-2.5 rounded-lg text-[9px] text-muted-foreground leading-relaxed font-mono">
-                      구단 소속 이적 보상료: <strong className="text-foreground/80">{formatCurrency(buyoutFee)}</strong>이 추가 청구되어 소속 구단 금고로 타행 송금됩니다.
-                    </div>
-                  )}
-
-                </div>
-
+                )}
               </div>
 
               {/* Action buttons footer */}
               <div className="bg-muted/30 px-4 sm:px-6 py-3 sm:py-4 border-t border-border flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between relative z-10 shrink-0">
                 <div className="text-center sm:text-left">
-                  {negMood === 'SIGNED' ? (
+                  {isTradeMode ? (
+                    <span className="text-[10px] text-muted-foreground uppercase font-mono">
+                      1:1 맞교환 제안 모드 (포지션: {p.role})
+                    </span>
+                  ) : negMood === 'SIGNED' ? (
                     <span className="text-[10px] font-bold text-emerald-400 uppercase flex items-center justify-center sm:justify-start gap-1 drop-shadow-sm font-sans">
                       ✓ 협상 합의 완료!
                     </span>
@@ -1125,7 +1327,28 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
-                  {negMood === 'SIGNED' ? (
+                  {isTradeMode ? (
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsTradeMode(false);
+                          setSelectedMyPlayerId('');
+                        }}
+                        className="flex-1 sm:flex-none px-4 py-3 sm:py-2.5 bg-background shadow-inner shadow-black/20 hover:bg-muted/50 border border-border text-muted-foreground hover:text-foreground text-xs font-black rounded-xl cursor-pointer transition-colors text-center"
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="button"
+                        onClick={submitTradeOffer}
+                        disabled={!selectedMyPlayerId}
+                        className="flex-1 sm:flex-none px-5 py-3 sm:py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.4)] rounded-xl text-xs font-black cursor-pointer transition-all flex items-center justify-center gap-1 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        📬 트레이드 제안 제출
+                      </button>
+                    </div>
+                  ) : negMood === 'SIGNED' ? (
                     <button
                       onClick={confirmNegotiationSuccess}
                       className="px-5 py-3 sm:py-2.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-emerald-950 shadow-[0_0_15px_rgba(52,211,153,0.4)] rounded-xl text-xs font-black cursor-pointer transition-all flex items-center justify-center gap-1 shrink-0 w-full sm:w-auto"
@@ -1157,7 +1380,6 @@ export const TransferMarket: React.FC<TransferMarketProps> = ({ playerTeamId }) 
                   )}
                 </div>
               </div>
-
             </div>
           </div>
         );
